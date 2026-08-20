@@ -240,11 +240,18 @@
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
   @media(max-width:820px){.grid3,.grid2{grid-template-columns:1fr;}}
-  .card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-xs);transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s var(--ease);}
+  .card{position:relative;background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow-xs);overflow:hidden;isolation:isolate;transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s var(--ease);}
+  .card::before{content:"";position:absolute;inset:0;z-index:0;opacity:0;pointer-events:none;transition:opacity .35s var(--ease);
+    background:radial-gradient(240px circle at var(--spot-x,50%) var(--spot-y,50%), rgba(194,79,42,.14), transparent 70%);}
   .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:rgba(194,79,42,.3);}
-  .card .num{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--cream-2);border:1px solid var(--line);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;margin-bottom:18px;}
+  .card:hover::before{opacity:1;}
+  .card > *{position:relative;z-index:1;}
+  .card .num{width:36px;height:36px;border-radius:var(--radius-sm);background:var(--cream-2);border:1px solid var(--line);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;margin-bottom:18px;transition:transform .3s var(--ease),background .3s var(--ease),color .3s var(--ease);}
+  .card:hover .num{background:linear-gradient(155deg, var(--gold), #8a3419);color:#fff;transform:scale(1.08) rotate(-4deg);}
   .card-icon{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:var(--radius-sm);
-    background:linear-gradient(155deg, rgba(194,79,42,.12), rgba(194,79,42,.04));border:1px solid rgba(194,79,42,.16);color:var(--gold);flex-shrink:0;}
+    background:linear-gradient(155deg, rgba(194,79,42,.12), rgba(194,79,42,.04));border:1px solid rgba(194,79,42,.16);color:var(--gold);flex-shrink:0;
+    transition:transform .3s var(--ease),background .3s var(--ease),color .3s var(--ease);}
+  .card:hover .card-icon{background:linear-gradient(155deg, var(--gold), #8a3419);color:#fff;transform:scale(1.08) rotate(-4deg);}
   .card h3{font-size:18.5px;margin-bottom:10px;}
   .card p{color:var(--ink-soft);font-size:14.5px;}
 

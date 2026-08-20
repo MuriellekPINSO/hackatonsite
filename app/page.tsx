@@ -13,6 +13,7 @@ import Users from "reicon-react/icons/Users";
 import Laptop from "reicon-react/icons/Laptop";
 import type { IconComponent } from "reicon-react/createIcon";
 import HowItWorks from "@/components/ui/how-it-works";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import GlobeIntro from "@/components/globe-intro";
 
 const GOLD = { bg: "bg-[#c24f2a]/10", text: "text-[#c24f2a]", border: "border-[#c24f2a]/20" };
@@ -345,7 +346,7 @@ function Defi() {
         </p>
 
         <div className="grid3 reveal-stagger">
-          <div className="card">
+          <SpotlightCard className="card">
             <div className="num">01</div>
             <h3>Héberger le modèle</h3>
             <p>
@@ -356,8 +357,8 @@ function Defi() {
               reste un objectif « stretch » si une quantification agressive et des tests de
               faisabilité le permettent.
             </p>
-          </div>
-          <div className="card">
+          </SpotlightCard>
+          <SpotlightCard className="card">
             <div className="num">02</div>
             <h3>Servir via une API</h3>
             <p>
@@ -365,8 +366,8 @@ function Defi() {
               interroger le modèle hébergé, avec une documentation minimale et une démonstration de
               latence/robustesse en conditions réelles.
             </p>
-          </div>
-          <div className="card">
+          </SpotlightCard>
+          <SpotlightCard className="card">
             <div className="num">03</div>
             <h3>Construire une application</h3>
             <p>
@@ -374,7 +375,7 @@ function Defi() {
               application grand public... L'idée compte moins que la qualité d'exécution :
               l'application doit réellement consommer l'API construite à l'étape 2.
             </p>
-          </div>
+          </SpotlightCard>
         </div>
       </div>
     </section>
@@ -641,7 +642,7 @@ function Eligibilite() {
         <span className="kicker">Qui peut participer</span>
         <h2 className="reveal">Conditions d'éligibilité</h2>
         <div className="grid3 reveal-stagger" style={{ marginTop: "32px" }}>
-          <div className="card">
+          <SpotlightCard className="card">
             <h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span className="card-icon">
                 <User size={16} />
@@ -652,8 +653,8 @@ function Eligibilite() {
               Étudiants, développeurs, data scientists et makers basés au Bénin, avec des bases en
               développement logiciel et/ou en IA/ML.
             </p>
-          </div>
-          <div className="card">
+          </SpotlightCard>
+          <SpotlightCard className="card">
             <h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span className="card-icon">
                 <Users size={16} />
@@ -661,8 +662,8 @@ function Eligibilite() {
               Équipes
             </h3>
             <p>De 2 à 5 personnes par équipe. Les équipes mixtes (dev, design, produit) sont encouragées.</p>
-          </div>
-          <div className="card">
+          </SpotlightCard>
+          <SpotlightCard className="card">
             <h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <span className="card-icon">
                 <Laptop size={16} />
@@ -673,7 +674,7 @@ function Eligibilite() {
               Chaque équipe apporte son propre ordinateur portable ; l'accès au cluster GPU est
               fourni par Tamebi pendant toute la durée de l'événement.
             </p>
-          </div>
+          </SpotlightCard>
         </div>
       </div>
     </section>

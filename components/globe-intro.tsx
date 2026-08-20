@@ -89,6 +89,17 @@ export default function GlobeIntro() {
     let settleDelta = 0;
     let hasSettled = false;
 
+    // Once the intro has settled onto Bénin, a visitor can grab the globe and
+    // spin it — the offsets below just add onto the animated phi/theta, so
+    // the idle sway keeps drifting around wherever they left it.
+    let dragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragPhiOffset = 0;
+    let dragThetaOffset = 0;
+    let dragStartPhiOffset = 0;
+    let dragStartThetaOffset = 0;
+
     const frame = (now: number) => {
       const t = now - start;
 
@@ -112,7 +123,10 @@ export default function GlobeIntro() {
         }
       }
 
-      globe.update({ phi, theta });
+      globe.update({
+        phi: phi + dragPhiOffset,
+        theta: clamp(theta + dragThetaOffset, -1.3, 1.3),
+      });
       raf = requestAnimationFrame(frame);
     };
 
@@ -121,14 +135,49 @@ export default function GlobeIntro() {
       theta = TARGET.theta;
       globe.update({ phi, theta });
       setSettled(true);
+      hasSettled = true;
     } else {
       raf = requestAnimationFrame(frame);
     }
+
+    canvas.style.cursor = "grab";
+    canvas.style.touchAction = "none";
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!hasSettled) return;
+      dragging = true;
+      canvas.setPointerCapture(event.pointerId);
+      dragStartX = event.clientX;
+      dragStartY = event.clientY;
+      dragStartPhiOffset = dragPhiOffset;
+      dragStartThetaOffset = dragThetaOffset;
+      canvas.style.cursor = "grabbing";
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!dragging) return;
+      dragPhiOffset = dragStartPhiOffset + (event.clientX - dragStartX) * 0.006;
+      dragThetaOffset = dragStartThetaOffset - (event.clientY - dragStartY) * 0.006;
+    };
+    const endDrag = (event: PointerEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      canvas.releasePointerCapture(event.pointerId);
+      canvas.style.cursor = "grab";
+    };
+
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
 
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
       globe.destroy();
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerup", endDrag);
+      canvas.removeEventListener("pointercancel", endDrag);
     };
   }, []);
 
@@ -165,9 +214,6 @@ export default function GlobeIntro() {
       <div className="globe-intro-stage" ref={stageRef}>
         <div className="stamp-stars" />
         <div className="globe-intro-overlay" ref={overlayRef}>
-          <span className="kicker" style={{ color: "var(--gold)" }}>
-            Tamebi Challenge
-          </span>
           <div className="globe-wrap" ref={wrapRef}>
             <canvas ref={canvasRef} />
             <div className={`globe-flag${settled ? " in" : ""}`}>

@@ -184,19 +184,19 @@ export function CircularCarousel({
         </AnimatePresence>
       </div>
 
-      {/* Center content */}
+      {/* Counter */}
       <motion.div
         key={activeItem.id}
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="flex items-baseline gap-1.5"
       >
-        <span className="text-5xl font-bold tracking-tight text-white/90">
+        <span className="text-sm font-semibold tracking-tight text-white/90">
           {String(activeIndex + 1).padStart(2, "0")}
         </span>
-        <span className="mt-1 text-xs text-white/40">
-          of {String(total).padStart(2, "0")}
+        <span className="text-xs text-white/40">
+          / {String(total).padStart(2, "0")}
         </span>
       </motion.div>
 

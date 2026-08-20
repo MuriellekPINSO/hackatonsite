@@ -10,7 +10,6 @@ import User from "reicon-react/icons/User";
 import Users from "reicon-react/icons/Users";
 import Laptop from "reicon-react/icons/Laptop";
 import HowItWorks from "@/components/ui/how-it-works";
-import { CircularCarousel } from "@/components/ui/circular-carousel";
 import GlobeIntro from "@/components/globe-intro";
 
 const GOLD = { bg: "bg-[#c24f2a]/10", text: "text-[#c24f2a]", border: "border-[#c24f2a]/20" };
@@ -148,11 +147,8 @@ export default function Page() {
         heroOutroRef={heroOutroRef}
       />
       <Intro />
-      <Cascade />
-      <Stamp />
       <Stats />
       <Defi />
-      <Gallery />
       <Programme />
       <Prix />
       <Partenaires />
@@ -161,6 +157,7 @@ export default function Page() {
       <Eligibilite />
       <Faq />
       <Inscription />
+      <Stamp />
       <Footer />
     </>
   );
@@ -259,10 +256,6 @@ function Hero({
             Cotonou, Bénin · 19–20 sept. 2026*
           </span>
         </div>
-        <div className="scroll-hint">
-          <span>Défilez — le cluster s'assemble</span>
-          <span className="dot" />
-        </div>
         <div className="wave">
           <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
             <defs>
@@ -287,34 +280,8 @@ function Hero({
 }
 
 function Intro() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  // Subtle scroll parallax on the photo — mirrors the hero's scroll-scrub
-  // technique at a much smaller scale, so this section has its own motion too.
-  useEffect(() => {
-    const section = sectionRef.current;
-    const img = imgRef.current;
-    if (!section || !img) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const onScroll = () => {
-      const rect = section.getBoundingClientRect();
-      const center = rect.top + rect.height / 2 - window.innerHeight / 2;
-      const shift = clamp(-center * 0.06, -22, 22);
-      img.style.transform = `scale(1.12) translateY(${shift}px)`;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
-
   return (
-    <section ref={sectionRef}>
+    <section>
       <div className="wrap intro-grid reveal">
         <div>
           <span className="kicker">Qui va se retrouver là</span>
@@ -335,54 +302,11 @@ function Intro() {
           </div>
         </div>
         <div className="ph intro-photo">
-          <Image
-            ref={imgRef}
-            src="/intro-team.jpg"
-            alt="Équipe de développeurs et data scientists collaborant pendant un hackathon"
-            fill
-            sizes="(max-width: 860px) 100vw, 500px"
-            style={{ objectFit: "cover" }}
-          />
           <div className="intro-photo-badge">
             <span>🇧🇯</span>
             <span>Cotonou, Bénin</span>
           </div>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function Cascade() {
-  const items = [
-    {
-      id: "sprint",
-      tag: "Sprint",
-      title: "Dans le sprint, rien n'est acquis d'avance",
-      description:
-        "30 heures non-stop sur un cluster GPU partagé entre toutes les équipes : une seule fenêtre pour livrer un endpoint qui tient réellement la charge.",
-    },
-    {
-      id: "equipe",
-      tag: "Équipe",
-      title: "Dans chaque équipe, de la rigueur et du culot",
-      description:
-        "Des devs, data scientists et makers qui conçoivent pour tenir en conditions réelles — pas pour l'effet d'une démo.",
-    },
-    {
-      id: "vision",
-      tag: "Vision",
-      title: "Le Tamebi Challenge, c'est…",
-      description:
-        "Une vision et une méthode. Ici, l'excellence technique n'est pas une option en plus. C'est la seule métrique qui compte.",
-    },
-  ];
-  return (
-    <section className="cascade-carousel-section">
-      <div className="stamp-stars" />
-      <div className="wrap reveal" style={{ position: "relative", zIndex: 1 }}>
-        <CircularCarousel items={items} />
-        <p className="cascade-tagline">La question n'est pas de savoir si vous êtes prêts.</p>
       </div>
     </section>
   );
@@ -527,35 +451,6 @@ function Defi() {
   );
 }
 
-function Gallery() {
-  const tones = ["", "tone-b", "tone-c"];
-  const titles = [
-    "Assistant IA",
-    "Visage généré par IA",
-    "Dashboard analytique",
-    "Avatar futuriste",
-    "Assistant vocal",
-    "Réseau de neurones",
-  ];
-
-  return (
-    <section className="alt">
-      <div className="wrap">
-        <div className="grid3 reveal-stagger">
-          {titles.map((title, i) => (
-            <div className="res-card" key={title}>
-              <div className={`ph ${tones[i % tones.length]}`} style={{ aspectRatio: "1/1" }} />
-              <div className="body">
-                <h4>{title}</h4>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Programme() {
   const steps = [
     {
@@ -593,8 +488,7 @@ function Programme() {
   return (
     <section id="programme">
       <div className="wrap">
-        <span className="kicker">Programme</span>
-        <h2 className="reveal">30 heures, sprint intensif</h2>
+        <h2 className="reveal">Au programme</h2>
       </div>
       <HowItWorks features={steps} className="!bg-transparent dark:!bg-transparent" />
     </section>
@@ -711,15 +605,7 @@ function Partenaires() {
               </div>
             ))}
           </div>
-          <div className="ph reveal" style={{ aspectRatio: "4/5" }}>
-            <Image
-              src="/res-partenaires.jpg"
-              alt="Réseau symbolisant le partenariat et la croissance"
-              fill
-              sizes="(max-width: 860px) 100vw, 460px"
-              style={{ objectFit: "cover" }}
-            />
-          </div>
+          <div className="ph reveal" style={{ aspectRatio: "4/5" }} />
         </div>
 
         <h3 className="reveal" style={{ fontSize: "22px", marginBottom: "28px" }}>

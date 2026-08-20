@@ -9,18 +9,21 @@ import Handshake from "reicon-react/icons/Handshake";
 import User from "reicon-react/icons/User";
 import Users from "reicon-react/icons/Users";
 import Laptop from "reicon-react/icons/Laptop";
-import BoltLightning from "reicon-react/icons/BoltLightning";
-import CpuBolt from "reicon-react/icons/CpuBolt";
-import Trophy from "reicon-react/icons/Trophy";
+import HowItWorks from "@/components/ui/how-it-works";
+import { CircularCarousel } from "@/components/ui/circular-carousel";
+import GlobeIntro from "@/components/globe-intro";
 
-const clamp = (n, min, max) => Math.min(Math.max(n, min), max);
+const GOLD = { bg: "bg-[#c24f2a]/10", text: "text-[#c24f2a]", border: "border-[#c24f2a]/20" };
+const INK = { bg: "bg-[#303034]/[0.05]", text: "text-[#303034]", border: "border-[#303034]/15" };
+
+const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
 
 export default function Page() {
-  const heroScrollRef = useRef(null);
-  const heroVideoRef = useRef(null);
-  const heroTextRef = useRef(null);
-  const heroOutroRef = useRef(null);
-  const navRef = useRef(null);
+  const heroScrollRef = useRef<HTMLDivElement>(null);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+  const heroTextRef = useRef<HTMLDivElement>(null);
+  const heroOutroRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   // Hero video scroll-scrub + nav shadow + reveal-on-scroll + count-up stats.
   // Kept as plain DOM effects (like the original static site) since these are
@@ -31,7 +34,7 @@ export default function Page() {
     const heroText = heroTextRef.current;
     const heroOutro = heroOutroRef.current;
     const nav = navRef.current;
-    const cleanups = [];
+    const cleanups: Array<() => void> = [];
 
     // --- Hero video scroll-scrub ---
     if (heroScroll && video) {
@@ -45,14 +48,14 @@ export default function Page() {
       video.play().then(() => video.pause()).catch(() => {});
 
       function update() {
-        if (!ready || !isFinite(video.duration)) return;
-        const scrollableHeight = heroScroll.offsetHeight - window.innerHeight;
-        const rect = heroScroll.getBoundingClientRect();
+        if (!ready || !isFinite(video!.duration)) return;
+        const scrollableHeight = heroScroll!.offsetHeight - window.innerHeight;
+        const rect = heroScroll!.getBoundingClientRect();
         const scrolled = Math.min(Math.max(-rect.top, 0), Math.max(scrollableHeight, 0));
         const progress = scrollableHeight > 0 ? scrolled / scrollableHeight : 0;
-        const target = progress * video.duration;
-        if (Math.abs(video.currentTime - target) > 0.03) {
-          video.currentTime = target;
+        const target = progress * video!.duration;
+        if (Math.abs(video!.currentTime - target) > 0.03) {
+          video!.currentTime = target;
         }
 
         // Intro text fades away early so the video plays clean, then a compact
@@ -104,13 +107,13 @@ export default function Page() {
     cleanups.push(() => io.disconnect());
 
     // --- Count-up stats ---
-    const counters = document.querySelectorAll("[data-count]");
+    const counters = document.querySelectorAll<HTMLElement>("[data-count]");
     const cio = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
           if (!e.isIntersecting) return;
-          const el = e.target;
-          const target = parseInt(el.dataset.count, 10);
+          const el = e.target as HTMLElement;
+          const target = parseInt(el.dataset.count || "0", 10);
           const prefix = el.dataset.prefix || "";
           const suffix = el.dataset.suffix || "";
           let cur = 0;
@@ -137,6 +140,7 @@ export default function Page() {
   return (
     <>
       <Nav navRef={navRef} />
+      <GlobeIntro />
       <Hero
         heroScrollRef={heroScrollRef}
         heroVideoRef={heroVideoRef}
@@ -162,9 +166,9 @@ export default function Page() {
   );
 }
 
-function Nav({ navRef }) {
+function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const links = [
+  const links: [string, string][] = [
     ["#defi", "Le défi"],
     ["#programme", "Programme"],
     ["#prix", "Prix"],
@@ -173,7 +177,7 @@ function Nav({ navRef }) {
     ["#faq", "FAQ"],
   ];
   return (
-    <header className="nav" id="siteNav" ref={navRef}>
+    <header className="nav" id="siteNav" ref={navRef as React.RefObject<HTMLHeadElement>}>
       <div className="nav-inner">
         <div className="logo">
           <Image src="/logo-tamebi.png" alt="Tamebi Challenge" width={150} height={41} priority />
@@ -215,7 +219,17 @@ function Nav({ navRef }) {
   );
 }
 
-function Hero({ heroScrollRef, heroVideoRef, heroTextRef, heroOutroRef }) {
+function Hero({
+  heroScrollRef,
+  heroVideoRef,
+  heroTextRef,
+  heroOutroRef,
+}: {
+  heroScrollRef: React.RefObject<HTMLDivElement | null>;
+  heroVideoRef: React.RefObject<HTMLVideoElement | null>;
+  heroTextRef: React.RefObject<HTMLDivElement | null>;
+  heroOutroRef: React.RefObject<HTMLDivElement | null>;
+}) {
   return (
     <section className="hero-scroll" id="heroScroll" ref={heroScrollRef}>
       <div className="hero-stage">
@@ -263,7 +277,7 @@ function Hero({ heroScrollRef, heroVideoRef, heroTextRef, heroOutroRef }) {
               className="wave-line wave-anim"
               style={{ animationDelay: "-3s" }}
               d="M0,80 C300,110 500,20 800,80 C950,110 1100,30 1200,70"
-              opacity="0.3"
+              opacity={0.3}
             />
           </svg>
         </div>
@@ -273,8 +287,8 @@ function Hero({ heroScrollRef, heroVideoRef, heroTextRef, heroOutroRef }) {
 }
 
 function Intro() {
-  const sectionRef = useRef(null);
-  const imgRef = useRef(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // Subtle scroll parallax on the photo — mirrors the hero's scroll-scrub
   // technique at a much smaller scale, so this section has its own motion too.
@@ -310,10 +324,15 @@ function Intro() {
             que le Bénin peut déployer et exploiter l'intelligence artificielle la plus avancée du
             moment, pas seulement la consommer.
           </p>
-          <p className="lead">
-            Trois jours de sprint, un cluster GPU de niveau recherche, et un objectif commun — un
+          <p className="lead" style={{ marginBottom: "26px" }}>
+            30 heures de sprint, un cluster GPU de niveau recherche, et un objectif commun — un
             endpoint API qui tourne, et une application qui le prouve.
           </p>
+          <div className="intro-pills">
+            <span className="intro-pill">30h non-stop</span>
+            <span className="intro-pill">2 à 5 pers. / équipe</span>
+            <span className="intro-pill">8×H200 / B200</span>
+          </div>
         </div>
         <div className="ph intro-photo">
           <Image
@@ -324,6 +343,10 @@ function Intro() {
             sizes="(max-width: 860px) 100vw, 500px"
             style={{ objectFit: "cover" }}
           />
+          <div className="intro-photo-badge">
+            <span>🇧🇯</span>
+            <span>Cotonou, Bénin</span>
+          </div>
         </div>
       </div>
     </section>
@@ -333,42 +356,33 @@ function Intro() {
 function Cascade() {
   const items = [
     {
-      icon: BoltLightning,
-      tone: "",
+      id: "sprint",
+      tag: "Sprint",
       title: "Dans le sprint, rien n'est acquis d'avance",
-      text: "30 heures non-stop sur un cluster GPU partagé entre toutes les équipes : une seule fenêtre pour livrer un endpoint qui tient réellement la charge.",
+      description:
+        "30 heures non-stop sur un cluster GPU partagé entre toutes les équipes : une seule fenêtre pour livrer un endpoint qui tient réellement la charge.",
     },
     {
-      icon: CpuBolt,
-      tone: "tone-b",
+      id: "equipe",
+      tag: "Équipe",
       title: "Dans chaque équipe, de la rigueur et du culot",
-      text: "Des devs, data scientists et makers qui conçoivent pour tenir en conditions réelles — pas pour l'effet d'une démo.",
+      description:
+        "Des devs, data scientists et makers qui conçoivent pour tenir en conditions réelles — pas pour l'effet d'une démo.",
     },
     {
-      icon: Trophy,
-      tone: "tone-c",
+      id: "vision",
+      tag: "Vision",
       title: "Le Tamebi Challenge, c'est…",
-      text: "Une vision et une méthode. Ici, l'excellence technique n'est pas une option en plus. C'est la seule métrique qui compte.",
+      description:
+        "Une vision et une méthode. Ici, l'excellence technique n'est pas une option en plus. C'est la seule métrique qui compte.",
     },
   ];
   return (
-    <section>
-      <div className="wrap">
-        <div className="cascade reveal-stagger">
-          {items.map(({ icon: Icon, tone, title, text }) => (
-            <div className="cascade-item" key={title}>
-              <div className={tone ? `ph ${tone}` : "ph"}>
-                <span className="glyph">
-                  <Icon size={30} />
-                </span>
-              </div>
-              <span className="connector" aria-hidden="true" />
-              <h4>{title}</h4>
-              <p>{text}</p>
-            </div>
-          ))}
-        </div>
-        <p className="cascade-tagline reveal">La question n'est pas de savoir si vous êtes prêts.</p>
+    <section className="cascade-carousel-section">
+      <div className="stamp-stars" />
+      <div className="wrap reveal" style={{ position: "relative", zIndex: 1 }}>
+        <CircularCarousel items={items} />
+        <p className="cascade-tagline">La question n'est pas de savoir si vous êtes prêts.</p>
       </div>
     </section>
   );
@@ -384,7 +398,7 @@ function Stamp() {
     "M600,355 C640,210 860,160 880,110",
     "M600,355 C650,220 980,200 1050,120",
   ];
-  const dots = [
+  const dots: [number, number, number][] = [
     [220, 220, 0], [340, 190, 0.3], [480, 160, 0.6], [600, 140, 0.9],
     [720, 160, 1.2], [860, 190, 1.5], [980, 220, 1.8],
   ];
@@ -394,9 +408,9 @@ function Stamp() {
       <svg className="stamp-arcs" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMax meet">
         <defs>
           <linearGradient id="stampGrad" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stopColor="#c24f2a" stopOpacity="0" />
-            <stop offset="45%" stopColor="#c24f2a" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#c24f2a" stopOpacity="0" />
+            <stop offset="0%" stopColor="#c24f2a" stopOpacity={0} />
+            <stop offset="45%" stopColor="#c24f2a" stopOpacity={0.7} />
+            <stop offset="100%" stopColor="#c24f2a" stopOpacity={0} />
           </linearGradient>
         </defs>
         {arcs.map((d, i) => (
@@ -514,56 +528,26 @@ function Defi() {
 }
 
 function Gallery() {
-  const cards = [
-    { src: "/gallery-1.jpg", alt: "Mockup d'application assistant IA" },
-    { src: "/gallery-2.jpg", alt: "Rendu wireframe d'un visage généré par IA" },
-    { src: "/gallery-3.jpg", alt: "Dashboard analytique alimenté par IA" },
-    { src: "/gallery-4.jpg", alt: "Portrait d'un avatar IA futuriste" },
-    { src: "/gallery-5.jpg", alt: "Mockup d'application assistant vocal" },
-    { src: "/gallery-6.jpg", alt: "Rendu abstrait d'un réseau de neurones" },
+  const tones = ["", "tone-b", "tone-c"];
+  const titles = [
+    "Assistant IA",
+    "Visage généré par IA",
+    "Dashboard analytique",
+    "Avatar futuriste",
+    "Assistant vocal",
+    "Réseau de neurones",
   ];
-  const fanRef = useRef(null);
-
-  // Auto-cycle the "active" (front) card even without hover, so the fan feels
-  // alive at rest; pauses while the visitor's cursor is actually on it.
-  useEffect(() => {
-    const container = fanRef.current;
-    if (!container) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const cardEls = Array.from(container.querySelectorAll(".fan-card"));
-    if (cardEls.length === 0) return;
-
-    let index = 0;
-    let paused = false;
-    cardEls[0].classList.add("active");
-
-    const tick = () => {
-      if (paused) return;
-      cardEls[index].classList.remove("active");
-      index = (index + 1) % cardEls.length;
-      cardEls[index].classList.add("active");
-    };
-    const interval = setInterval(tick, 2200);
-
-    const onEnter = () => { paused = true; };
-    const onLeave = () => { paused = false; };
-    container.addEventListener("mouseenter", onEnter);
-    container.addEventListener("mouseleave", onLeave);
-
-    return () => {
-      clearInterval(interval);
-      container.removeEventListener("mouseenter", onEnter);
-      container.removeEventListener("mouseleave", onLeave);
-    };
-  }, []);
 
   return (
     <section className="alt">
       <div className="wrap">
-        <div className="gallery-fan reveal" ref={fanRef}>
-          {cards.map((c) => (
-            <div className="fan-card" key={c.src}>
-              <Image src={c.src} alt={c.alt} fill sizes="220px" style={{ objectFit: "cover" }} />
+        <div className="grid3 reveal-stagger">
+          {titles.map((title, i) => (
+            <div className="res-card" key={title}>
+              <div className={`ph ${tones[i % tones.length]}`} style={{ aspectRatio: "1/1" }} />
+              <div className="body">
+                <h4>{title}</h4>
+              </div>
             </div>
           ))}
         </div>
@@ -575,76 +559,44 @@ function Gallery() {
 function Programme() {
   const steps = [
     {
-      day: "H+0",
       title: "Accueil, constitution des équipes & briefing technique",
-      text: "Présentation du modèle hébergé, attribution des accès au cluster 8×H200/B200, formation des équipes (2 à 5 personnes) et lancement officiel.",
+      description:
+        "H+0 → Présentation du modèle hébergé, attribution des accès au cluster 8×H200/B200, formation des équipes (2 à 5 personnes) et lancement officiel.",
+      colors: GOLD,
     },
     {
-      day: "H+0 → H+6",
       title: "Déploiement & premiers tests d'inférence",
-      text: "Mise en place de l'endpoint API, premiers appels au modèle, validation de la charge GPU avec les mentors Tamebi sur place.",
+      description:
+        "H+0 → H+6 → Mise en place de l'endpoint API, premiers appels au modèle, validation de la charge GPU avec les mentors Tamebi sur place.",
+      colors: INK,
     },
     {
-      day: "H+6 → H+22",
       title: "Bloc de développement principal",
-      text: "Construction de l'application, intégration continue à l'API, itérations avec les mentors. C'est le cœur du sprint.",
+      description:
+        "H+6 → H+22 → Construction de l'application, intégration continue à l'API, itérations avec les mentors. C'est le cœur du sprint.",
+      colors: GOLD,
     },
     {
-      day: "H+22 → H+27",
       title: "Finalisation & tests de charge",
-      text: "Stabilisation de l'endpoint, tests en conditions réelles, préparation du pitch et des supports de démo.",
+      description:
+        "H+22 → H+27 → Stabilisation de l'endpoint, tests en conditions réelles, préparation du pitch et des supports de démo.",
+      colors: INK,
     },
     {
-      day: "H+27 → H+30",
       title: "Démonstrations live & jury",
-      text: "Chaque équipe présente son endpoint API et son application devant le jury Tamebi. Annonce des résultats et entretiens des 3 premières équipes.",
+      description:
+        "H+27 → H+30 → Chaque équipe présente son endpoint API et son application devant le jury Tamebi. Annonce des résultats et entretiens des 3 premières équipes.",
+      colors: GOLD,
     },
   ];
-  const timelineRef = useRef(null);
-
-  // Real scroll-linked progress: the gold line fills and each step lights up
-  // as the visitor actually scrolls past it, instead of a looping fake animation.
-  useEffect(() => {
-    const el = timelineRef.current;
-    if (!el) return;
-    const items = Array.from(el.querySelectorAll(".tl-item"));
-
-    const onScroll = () => {
-      const rect = el.getBoundingClientRect();
-      const total = rect.height - window.innerHeight * 0.5;
-      const scrolled = -rect.top + window.innerHeight * 0.5;
-      const progress = total > 0 ? clamp(scrolled / total, 0, 1) : 0;
-      el.style.setProperty("--progress", String(progress));
-      items.forEach((it) => {
-        it.classList.toggle("passed", it.getBoundingClientRect().top < window.innerHeight * 0.5);
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, []);
 
   return (
     <section id="programme">
       <div className="wrap">
         <span className="kicker">Programme</span>
         <h2 className="reveal">30 heures, sprint intensif</h2>
-        <div className="timeline reveal-stagger" style={{ marginTop: "44px" }} ref={timelineRef}>
-          <div className="timeline-fill" aria-hidden="true" />
-          <div className="timeline-dot" aria-hidden="true" />
-          {steps.map((s) => (
-            <div className="tl-item" key={s.day}>
-              <div className="day">{s.day}</div>
-              <h4>{s.title}</h4>
-              <p>{s.text}</p>
-            </div>
-          ))}
-        </div>
       </div>
+      <HowItWorks features={steps} className="!bg-transparent dark:!bg-transparent" />
     </section>
   );
 }
@@ -695,7 +647,7 @@ function Prix() {
 }
 
 function Partenaires() {
-  const reasons = [
+  const reasons: [any, string, string][] = [
     [Cloud, "Compléter la capacité de calcul", "Crédits cloud ou accès GPU additionnel pour sécuriser ou étendre le cluster réservé."],
     [GraduationCap, "Soutenir l'écosystème et la formation", "Universités, incubateurs et administrations : donnez de la visibilité à la relève tech du Bénin."],
     [Bullhorn, "Amplifier la portée de l'événement", "Couverture éditoriale, relais sur vos canaux, présence lors des démonstrations finales."],
@@ -818,10 +770,10 @@ function Partenaires() {
 }
 
 function Ressources() {
-  const items = [
-    ["/res-reglement.jpg", "Règlement", "Règlement officiel Tamebi Challenge 2026", "Critères de notation, format des livrables, code de conduite. Publication à venir."],
-    ["/res-kit.jpg", "Kit équipes", "Identité visuelle & templates", "Logos, bannières réseaux sociaux et template de pitch pour chaque équipe inscrite."],
-    ["/res-sponsoring.jpg", "Partenaires", "Dossier de sponsoring", "Vous voulez soutenir le Tamebi Challenge ? Le dossier partenaires sera disponible prochainement."],
+  const items: [string, string, string][] = [
+    ["Règlement", "Règlement officiel Tamebi Challenge 2026", "Critères de notation, format des livrables, code de conduite. Publication à venir."],
+    ["Kit équipes", "Identité visuelle & templates", "Logos, bannières réseaux sociaux et template de pitch pour chaque équipe inscrite."],
+    ["Partenaires", "Dossier de sponsoring", "Vous voulez soutenir le Tamebi Challenge ? Le dossier partenaires sera disponible prochainement."],
   ];
   return (
     <section id="ressources">
@@ -832,11 +784,9 @@ function Ressources() {
           Documents et supports mis à disposition avant et pendant l'événement.
         </p>
         <div className="grid3 reveal-stagger">
-          {items.map(([src, tag, title, text]) => (
+          {items.map(([tag, title, text]) => (
             <div className="res-card" key={tag}>
-              <div className="ph">
-                <Image src={src} alt={title} fill sizes="(max-width: 820px) 100vw, 380px" style={{ objectFit: "cover" }} />
-              </div>
+              <div className="ph" style={{ aspectRatio: "16/10" }} />
               <div className="body">
                 <span className="res-tag">{tag}</span>
                 <h4>{title}</h4>

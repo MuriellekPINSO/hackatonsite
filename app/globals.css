@@ -187,12 +187,6 @@
   .scroll-hint .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:bounce 1.8s ease-in-out infinite;}
   @keyframes bounce{0%,100%{transform:translateY(0);opacity:.5;}50%{transform:translateY(8px);opacity:1;}}
 
-  .wave{position:absolute;left:0;right:0;bottom:0;height:110px;z-index:2;}
-  .wave svg{position:absolute;bottom:-2px;left:0;width:100%;height:100%;}
-  .wave-line{fill:none;stroke:url(#waveGrad);stroke-width:1.4;opacity:.55;}
-  .wave-anim{animation:waveShift 9s ease-in-out infinite alternate;}
-  @keyframes waveShift{from{transform:translateX(0) translateY(0);}to{transform:translateX(-40px) translateY(6px);}}
-
   .draft-note{margin-top:0;font-size:12.5px;color:rgba(247,247,249,.6);border-left:2px solid var(--gold);padding:10px 16px;background:rgba(247,247,249,.06);max-width:640px;border-radius:0 8px 8px 0;margin-bottom:40px;}
 
   /* INTRO */
@@ -211,12 +205,6 @@
     display:inline-flex;align-items:center;font-size:12.5px;font-weight:700;color:var(--green-soft);
     background:rgba(194,79,42,.1);border:1px solid rgba(194,79,42,.16);padding:6px 14px;border-radius:var(--radius-pill);
   }
-
-  /* CASCADE — dark stage for the circular carousel */
-  .cascade-carousel-section{position:relative;overflow:hidden;
-    background:radial-gradient(circle at 50% 0%, rgba(194,79,42,.16), transparent 60%), #0d0d10;}
-  .cascade-tagline{text-align:center;color:rgba(247,247,249,.6);font-size:15px;margin-top:36px;}
-  .cascade-tagline::before{content:"";display:block;width:22px;height:1px;background:var(--gold);margin:0 auto 18px;}
 
   /* STAMP */
   .stamp{
@@ -247,19 +235,6 @@
   .stamp-flow{opacity:0;stroke-dasharray:70 340;animation:stampFlow 3.2s linear infinite;}
   @keyframes stampFlow{0%{opacity:0;stroke-dashoffset:410;}8%{opacity:.9;}70%{opacity:.9;}100%{opacity:0;stroke-dashoffset:0;}}
   @keyframes starTwinkle{0%,100%{opacity:.25;}50%{opacity:1;}}
-
-  /* STATS — divide-x façon shadcn */
-  .stats{border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
-  .stats .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:0;}
-  .stat{padding:44px 28px;border-right:1px solid var(--line);}
-  .stat:last-child{border-right:none;}
-  .stat h3{font-size:clamp(30px,4vw,44px);color:var(--green);font-weight:800;}
-  .stat span{font-size:13px;color:var(--ink-soft);}
-  @media(max-width:760px){
-    .stats .wrap{grid-template-columns:repeat(2,1fr);}
-    .stat:nth-child(2n){border-right:none;}
-    .stat:nth-child(n+3){border-top:1px solid var(--line);}
-  }
 
   /* CARDS */
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
@@ -411,7 +386,6 @@
   .nav-toggle:focus-visible{
     outline:2px solid var(--gold);outline-offset:3px;border-radius:10px;
   }
-  .fan-card:focus-visible{outline:2px solid var(--gold);outline-offset:4px;}
 
   /* REDUCED MOTION */
   @media (prefers-reduced-motion: reduce){

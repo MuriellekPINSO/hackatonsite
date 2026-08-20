@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
 import Cloud from "reicon-react/icons/Cloud";
 import GraduationCap from "reicon-react/icons/GraduationCap";
@@ -9,6 +11,7 @@ import Handshake from "reicon-react/icons/Handshake";
 import User from "reicon-react/icons/User";
 import Users from "reicon-react/icons/Users";
 import Laptop from "reicon-react/icons/Laptop";
+import type { IconComponent } from "reicon-react/createIcon";
 import HowItWorks from "@/components/ui/how-it-works";
 import GlobeIntro from "@/components/globe-intro";
 
@@ -17,6 +20,10 @@ const INK = { bg: "bg-[#303034]/[0.05]", text: "text-[#303034]", border: "border
 
 const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
 
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
 export default function Page() {
   const heroScrollRef = useRef<HTMLDivElement>(null);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
@@ -24,9 +31,8 @@ export default function Page() {
   const heroOutroRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
-  // Hero video scroll-scrub + nav shadow + reveal-on-scroll + count-up stats.
-  // Kept as plain DOM effects (like the original static site) since these are
-  // one-shot presentational animations, not app state.
+  // Hero video scroll-scrub + nav shadow + reveal-on-scroll, driven by GSAP
+  // ScrollTrigger instead of hand-rolled rect/resize math.
   useEffect(() => {
     const heroScroll = heroScrollRef.current;
     const video = heroVideoRef.current;
@@ -40,45 +46,45 @@ export default function Page() {
       let ready = video.readyState >= 1; // metadata may already be loaded before this runs
       const onLoadedMetadata = () => {
         ready = true;
-        update();
+        ScrollTrigger.refresh();
       };
       video.addEventListener("loadedmetadata", onLoadedMetadata);
       // iOS/Safari sometimes needs a play/pause cycle to decode the first frame for scrubbing
       video.play().then(() => video.pause()).catch(() => {});
 
-      function update() {
-        if (!ready || !isFinite(video!.duration)) return;
-        const scrollableHeight = heroScroll!.offsetHeight - window.innerHeight;
-        const rect = heroScroll!.getBoundingClientRect();
-        const scrolled = Math.min(Math.max(-rect.top, 0), Math.max(scrollableHeight, 0));
-        const progress = scrollableHeight > 0 ? scrolled / scrollableHeight : 0;
-        const target = progress * video!.duration;
-        if (Math.abs(video!.currentTime - target) > 0.03) {
-          video!.currentTime = target;
-        }
+      const st = ScrollTrigger.create({
+        trigger: heroScroll,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: true,
+        onUpdate: (self) => {
+          if (!ready || !isFinite(video.duration)) return;
+          const progress = self.progress;
+          const target = progress * video.duration;
+          if (Math.abs(video.currentTime - target) > 0.03) {
+            video.currentTime = target;
+          }
 
-        // Intro text fades away early so the video plays clean, then a compact
-        // caption fades in near the end of the scrub, aligned with the grid.
-        if (heroText) {
-          const fadeOut = clamp((progress - 0.1) / (0.32 - 0.1), 0, 1);
-          heroText.style.opacity = String(1 - fadeOut);
-          heroText.style.transform = `translateY(${-24 * fadeOut}px)`;
-          heroText.style.pointerEvents = fadeOut > 0.95 ? "none" : "auto";
-        }
-        if (heroOutro) {
-          const fadeIn = clamp((progress - 0.74) / (0.94 - 0.74), 0, 1);
-          heroOutro.style.opacity = String(fadeIn);
-          heroOutro.style.transform = `translateY(${16 * (1 - fadeIn)}px)`;
-        }
-      }
-      window.addEventListener("scroll", update, { passive: true });
-      window.addEventListener("resize", update);
-      update();
+          // Intro text fades away early so the video plays clean, then a compact
+          // caption fades in near the end of the scrub, aligned with the grid.
+          if (heroText) {
+            const fadeOut = clamp((progress - 0.1) / (0.32 - 0.1), 0, 1);
+            gsap.set(heroText, {
+              opacity: 1 - fadeOut,
+              y: -24 * fadeOut,
+              pointerEvents: fadeOut > 0.95 ? "none" : "auto",
+            });
+          }
+          if (heroOutro) {
+            const fadeIn = clamp((progress - 0.74) / (0.94 - 0.74), 0, 1);
+            gsap.set(heroOutro, { opacity: fadeIn, y: 16 * (1 - fadeIn) });
+          }
+        },
+      });
 
       cleanups.push(() => {
         video.removeEventListener("loadedmetadata", onLoadedMetadata);
-        window.removeEventListener("scroll", update);
-        window.removeEventListener("resize", update);
+        st.kill();
       });
     }
 
@@ -91,47 +97,15 @@ export default function Page() {
     }
 
     // --- Reveal on scroll ---
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("in");
-            io.unobserve(e.target);
-          }
-        });
-      },
-      { threshold: 0.15 }
+    const triggers = gsap.utils.toArray<HTMLElement>(".reveal, .reveal-stagger").map((el) =>
+      ScrollTrigger.create({
+        trigger: el,
+        start: "top 85%",
+        once: true,
+        onEnter: () => el.classList.add("in"),
+      })
     );
-    document.querySelectorAll(".reveal, .reveal-stagger").forEach((el) => io.observe(el));
-    cleanups.push(() => io.disconnect());
-
-    // --- Count-up stats ---
-    const counters = document.querySelectorAll<HTMLElement>("[data-count]");
-    const cio = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (!e.isIntersecting) return;
-          const el = e.target as HTMLElement;
-          const target = parseInt(el.dataset.count || "0", 10);
-          const prefix = el.dataset.prefix || "";
-          const suffix = el.dataset.suffix || "";
-          let cur = 0;
-          const step = Math.max(1, Math.round(target / 40));
-          const t = setInterval(() => {
-            cur += step;
-            if (cur >= target) {
-              cur = target;
-              clearInterval(t);
-            }
-            el.textContent = prefix + cur + suffix;
-          }, 25);
-          cio.unobserve(el);
-        });
-      },
-      { threshold: 0.6 }
-    );
-    counters.forEach((el) => cio.observe(el));
-    cleanups.push(() => cio.disconnect());
+    cleanups.push(() => triggers.forEach((t) => t.kill()));
 
     return () => cleanups.forEach((fn) => fn());
   }, []);
@@ -147,7 +121,6 @@ export default function Page() {
         heroOutroRef={heroOutroRef}
       />
       <Intro />
-      <Stats />
       <Defi />
       <Programme />
       <Prix />
@@ -230,7 +203,7 @@ function Hero({
   return (
     <section className="hero-scroll" id="heroScroll" ref={heroScrollRef}>
       <div className="hero-stage">
-        <video className="hero-video" ref={heroVideoRef} muted playsInline preload="auto">
+        <video className="hero-video" ref={heroVideoRef} muted playsInline preload="auto" aria-hidden="true">
           <source src="/gpu-assemble.mp4" type="video/mp4" />
         </video>
         <div className="hero-overlay" />
@@ -255,24 +228,6 @@ function Hero({
           <span className="kicker" style={{ marginBottom: 0 }}>
             Cotonou, Bénin · 19–20 sept. 2026*
           </span>
-        </div>
-        <div className="wave">
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="waveGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#c24f2a" stopOpacity="0" />
-                <stop offset="50%" stopColor="#c24f2a" stopOpacity="1" />
-                <stop offset="100%" stopColor="#c24f2a" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path className="wave-line wave-anim" d="M0,60 C300,10 500,110 800,50 C950,20 1100,90 1200,60" />
-            <path
-              className="wave-line wave-anim"
-              style={{ animationDelay: "-3s" }}
-              d="M0,80 C300,110 500,20 800,80 C950,110 1100,30 1200,70"
-              opacity={0.3}
-            />
-          </svg>
         </div>
       </div>
     </section>
@@ -328,8 +283,8 @@ function Stamp() {
   ];
   return (
     <div className="stamp reveal">
-      <div className="stamp-stars" />
-      <svg className="stamp-arcs" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMax meet">
+      <div className="stamp-stars" aria-hidden="true" />
+      <svg className="stamp-arcs" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
         <defs>
           <linearGradient id="stampGrad" x1="0" y1="1" x2="0" y2="0">
             <stop offset="0%" stopColor="#c24f2a" stopOpacity={0} />
@@ -373,31 +328,6 @@ function Stamp() {
         <p>
           Le Bénin ne consomme pas l'IA la plus puissante du monde. <strong>Il la fait tourner.</strong>
         </p>
-      </div>
-    </div>
-  );
-}
-
-function Stats() {
-  return (
-    <div className="stats">
-      <div className="wrap reveal-stagger">
-        <div className="stat">
-          <h3 data-count="30" data-suffix="h">0h</h3>
-          <span>Sprint non-stop</span>
-        </div>
-        <div className="stat">
-          <h3>8×H200</h3>
-          <span>ou 8×B200 réservés par Tamebi</span>
-        </div>
-        <div className="stat">
-          <h3 data-count="3" data-prefix="Top ">Top 0</h3>
-          <span>Équipes invitées en entretien Tamebi</span>
-        </div>
-        <div className="stat">
-          <h3 data-count="100" data-suffix="%">0%</h3>
-          <span>Financé sur fonds Tamebi</span>
-        </div>
       </div>
     </div>
   );
@@ -541,7 +471,7 @@ function Prix() {
 }
 
 function Partenaires() {
-  const reasons: [any, string, string][] = [
+  const reasons: [IconComponent, string, string][] = [
     [Cloud, "Compléter la capacité de calcul", "Crédits cloud ou accès GPU additionnel pour sécuriser ou étendre le cluster réservé."],
     [GraduationCap, "Soutenir l'écosystème et la formation", "Universités, incubateurs et administrations : donnez de la visibilité à la relève tech du Bénin."],
     [Bullhorn, "Amplifier la portée de l'événement", "Couverture éditoriale, relais sur vos canaux, présence lors des démonstrations finales."],
@@ -828,7 +758,7 @@ function Inscription() {
     <section id="inscription">
       <div className="wrap">
         <div className="cta-final reveal">
-          <div className="stamp-stars" />
+          <div className="stamp-stars" aria-hidden="true" />
           <div style={{ position: "relative", zIndex: 1 }}>
             <span className="kicker" style={{ color: "var(--accent-on-dark)" }}>
               Places limitées
@@ -846,7 +776,10 @@ function Inscription() {
                 // TODO: brancher sur le vrai formulaire d'inscription (Google Form / Tally / API Tamebi)
               }}
             >
-              <input type="email" placeholder="ton@email.com" required />
+              <label htmlFor="notify-email" className="sr-only">
+                Adresse email
+              </label>
+              <input id="notify-email" type="email" placeholder="ton@email.com" required />
               <button type="submit" className="btn btn-light">
                 {submitted ? "Merci — à bientôt !" : "Être notifié →"}
               </button>
@@ -879,6 +812,7 @@ function Footer() {
             <div><a href="#programme">Programme</a></div>
             <div><a href="#prix">Prix</a></div>
             <div><a href="#partenaires">Partenaires</a></div>
+            <div><a href="#ressources">Ressources</a></div>
             <div><a href="#faq">FAQ</a></div>
           </div>
           <div className="fcol">

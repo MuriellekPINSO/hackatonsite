@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import createGlobe, { type Globe } from "cobe";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 // Cotonou, Bénin — le point que le globe doit finir par regarder de face.
 const BENIN: [number, number] = [6.3703, 2.3912];
@@ -25,7 +31,6 @@ function anglesToFace(location: [number, number]) {
 }
 
 const TARGET = anglesToFace(BENIN);
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 // Shortest angular path so the settle never spins the "wrong" way round.
 const shortestDelta = (from: number, to: number) => {
   const diff = (to - from) % (Math.PI * 2);
@@ -39,16 +44,15 @@ export default function GlobeIntro() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [settled, setSettled] = useState(false);
 
-  // Spin freely, then ease onto Bénin, then idle-drift — a one-shot intro
-  // animation (time-based), independent from the scroll-driven exit below.
+  // Spin freely, then ease onto Bénin, then idle-drift — a one-shot GSAP
+  // timeline (time-based), independent from the scroll-driven exit below.
   useEffect(() => {
     const canvas = canvasRef.current;
     const wrap = wrapRef.current;
     if (!canvas || !wrap) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let phi = 0;
-    let theta = 0.15;
+    const state = { phi: 0, theta: 0.15 };
     let width = 0;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
@@ -62,8 +66,8 @@ export default function GlobeIntro() {
     const globe: Globe = createGlobe(canvas, {
       width: 600 * dpr,
       height: 600 * dpr,
-      phi,
-      theta,
+      phi: state.phi,
+      theta: state.theta,
       dark: 1,
       diffuse: 1.1,
       mapSamples: 12000,
@@ -79,14 +83,9 @@ export default function GlobeIntro() {
     const ro = new ResizeObserver(setSize);
     ro.observe(wrap);
 
-    let raf = 0;
-    const start = performance.now();
-    const SPIN_MS = reduced ? 0 : 2200;
-    const SETTLE_MS = reduced ? 0 : 1600;
+    const SPIN_S = reduced ? 0 : 2.2;
+    const SETTLE_S = reduced ? 0 : 1.6;
 
-    let settleStartPhi = phi;
-    let settleStartTheta = theta;
-    let settleDelta = 0;
     let hasSettled = false;
 
     // Once the intro has settled onto Bénin, a visitor can grab the globe and
@@ -100,44 +99,40 @@ export default function GlobeIntro() {
     let dragStartPhiOffset = 0;
     let dragStartThetaOffset = 0;
 
-    const frame = (now: number) => {
-      const t = now - start;
-
-      if (t < SPIN_MS) {
-        phi += 0.045;
-      } else if (t < SPIN_MS + SETTLE_MS) {
-        if (settleDelta === 0 && t >= SPIN_MS) {
-          settleStartPhi = phi;
-          settleStartTheta = theta;
-          settleDelta = shortestDelta(phi, TARGET.phi);
-        }
-        const p = easeOutCubic(clamp((t - SPIN_MS) / SETTLE_MS, 0, 1));
-        phi = settleStartPhi + settleDelta * p;
-        theta = settleStartTheta + (TARGET.theta - settleStartTheta) * p;
-      } else {
-        phi = TARGET.phi + Math.sin(t / 4000) * 0.02;
-        theta = TARGET.theta;
-        if (!hasSettled) {
-          hasSettled = true;
-          setSettled(true);
-        }
-      }
-
+    const render = () => {
       globe.update({
-        phi: phi + dragPhiOffset,
-        theta: clamp(theta + dragThetaOffset, -1.3, 1.3),
+        phi: state.phi + dragPhiOffset,
+        theta: clamp(state.theta + dragThetaOffset, -1.3, 1.3),
       });
-      raf = requestAnimationFrame(frame);
+    };
+    gsap.ticker.add(render);
+
+    let idleTween: gsap.core.Tween | null = null;
+    const settle = () => {
+      hasSettled = true;
+      setSettled(true);
+      idleTween = gsap.fromTo(
+        state,
+        { phi: TARGET.phi - 0.02 },
+        { phi: TARGET.phi + 0.02, duration: 12.57, ease: "sine.inOut", yoyo: true, repeat: -1 }
+      );
     };
 
+    const tl = gsap.timeline();
     if (reduced) {
-      phi = TARGET.phi;
-      theta = TARGET.theta;
-      globe.update({ phi, theta });
-      setSettled(true);
-      hasSettled = true;
+      gsap.set(state, { phi: TARGET.phi, theta: TARGET.theta });
+      settle();
     } else {
-      raf = requestAnimationFrame(frame);
+      // Frame-rate independent equivalent of the original "phi += 0.045/frame" spin.
+      const spinRadians = 0.045 * 60 * SPIN_S;
+      const settleDelta = shortestDelta(state.phi + spinRadians, TARGET.phi);
+      tl.to(state, { phi: `+=${spinRadians}`, duration: SPIN_S, ease: "none" }).to(state, {
+        phi: `+=${settleDelta}`,
+        theta: TARGET.theta,
+        duration: SETTLE_S,
+        ease: "power2.out",
+        onComplete: settle,
+      });
     }
 
     canvas.style.cursor = "grab";
@@ -171,7 +166,9 @@ export default function GlobeIntro() {
     canvas.addEventListener("pointercancel", endDrag);
 
     return () => {
-      cancelAnimationFrame(raf);
+      tl.kill();
+      idleTween?.kill();
+      gsap.ticker.remove(render);
       ro.disconnect();
       globe.destroy();
       canvas.removeEventListener("pointerdown", onPointerDown);
@@ -182,37 +179,32 @@ export default function GlobeIntro() {
   }, []);
 
   // Scroll-linked exit: the globe scales up and fades as the visitor scrolls
-  // past this section, revealing the real site (the untouched Hero) beneath —
-  // same getBoundingClientRect progress technique as the Hero's own scrub.
+  // past this section, revealing the real site (the untouched Hero) beneath.
   useEffect(() => {
     const section = wrapRef.current?.closest<HTMLElement>(".globe-intro-scroll");
     const stage = stageRef.current;
     const overlay = overlayRef.current;
     if (!section || !stage) return;
 
-    const onScroll = () => {
-      const scrollable = section.offsetHeight - window.innerHeight;
-      const rect = section.getBoundingClientRect();
-      const scrolled = clamp(-rect.top, 0, Math.max(scrollable, 0));
-      const progress = scrollable > 0 ? scrolled / scrollable : 0;
+    const st = ScrollTrigger.create({
+      trigger: section,
+      start: "top top",
+      end: "bottom bottom",
+      scrub: true,
+      onUpdate: (self) => {
+        const progress = self.progress;
+        gsap.set(stage, { scale: 1 + progress * 1.5, opacity: 1 - progress });
+        if (overlay) gsap.set(overlay, { opacity: 1 - Math.min(progress * 4, 1) });
+      },
+    });
 
-      stage.style.transform = `scale(${1 + progress * 1.5})`;
-      stage.style.opacity = String(1 - progress);
-      if (overlay) overlay.style.opacity = String(1 - Math.min(progress * 4, 1));
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
+    return () => st.kill();
   }, []);
 
   return (
     <section className="globe-intro-scroll">
       <div className="globe-intro-stage" ref={stageRef}>
-        <div className="stamp-stars" />
+        <div className="stamp-stars" aria-hidden="true" />
         <div className="globe-intro-overlay" ref={overlayRef}>
           <div className="globe-wrap" ref={wrapRef}>
             <canvas ref={canvasRef} />

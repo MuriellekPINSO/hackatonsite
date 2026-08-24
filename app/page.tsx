@@ -21,6 +21,7 @@ import type { IconComponent } from "reicon-react/createIcon";
 import HowItWorks from "@/components/ui/how-it-works";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { DefiDiagram } from "@/components/ui/defi-diagram";
+import { PartenariatIllustration } from "@/components/ui/partenariat-illustration";
 import { PrizeCarousel } from "@/components/ui/prize-carousel";
 
 const GpuModelViewer = dynamic(
@@ -36,6 +37,42 @@ const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min)
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+}
+
+// ScrollSmoother fakes scrolling with a CSS transform, so a plain
+// <a href="#id"> anchor jump no longer lands in the right place. Worse:
+// smoother.scrollTo(target, true) and tweening smoother.scrollTop both reuse
+// the ambient wheel-scroll lag (the `smooth` constant), which keeps
+// re-applying no matter how the position is set — window.scrollY reaches the
+// target within ~1s but the visual transform then creeps for several MORE
+// seconds, so a nav click looks like it lands somewhere wrong.
+// smoother.scrollTo(target, false) is the one call confirmed to position
+// instantly and correctly, so we drive our own eased tween and feed it that
+// call every frame instead of letting GSAP proxy `scrollTop` directly.
+function scrollToHash(e: React.MouseEvent<HTMLAnchorElement>, hash: string) {
+  e.preventDefault();
+  const el = document.querySelector<HTMLElement>(hash);
+  if (!el) return;
+  const smoother = ScrollSmoother.get();
+  if (smoother) {
+    const startY = smoother.scrollTop();
+    const targetY = el.getBoundingClientRect().top + startY;
+    gsap.to(
+      { y: startY },
+      {
+        y: targetY,
+        duration: 0.9,
+        ease: "power2.inOut",
+        overwrite: true,
+        onUpdate() {
+          smoother.scrollTo(this.targets()[0].y, false);
+        },
+      }
+    );
+  } else {
+    el.scrollIntoView({ behavior: "smooth" });
+  }
+  window.history.pushState(null, "", hash);
 }
 
 export default function Page() {
@@ -62,7 +99,6 @@ export default function Page() {
       content: "#smooth-content",
       smooth: 1.1,
       smoothTouch: 0.1,
-      normalizeScroll: true,
     });
     return () => smoother.kill();
   }, []);
@@ -236,12 +272,17 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
         </div>
         <nav className="links">
           {links.map(([href, label]) => (
-            <a href={href} key={href}>
+            <a href={href} key={href} onClick={(e) => scrollToHash(e, href)}>
               {label}
             </a>
           ))}
         </nav>
-        <a href="#inscription" className="btn btn-accent" style={{ padding: "11px 22px", fontSize: "13.5px" }}>
+        <a
+          href="#inscription"
+          className="btn btn-accent"
+          style={{ padding: "11px 22px", fontSize: "13.5px" }}
+          onClick={(e) => scrollToHash(e, "#inscription")}
+        >
           S'inscrire
         </a>
         <button
@@ -258,11 +299,25 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
       {mobileOpen && (
         <nav className="nav-mobile">
           {links.map(([href, label]) => (
-            <a href={href} key={href} onClick={() => setMobileOpen(false)}>
+            <a
+              href={href}
+              key={href}
+              onClick={(e) => {
+                setMobileOpen(false);
+                scrollToHash(e, href);
+              }}
+            >
               {label}
             </a>
           ))}
-          <a href="#inscription" className="btn btn-accent" onClick={() => setMobileOpen(false)}>
+          <a
+            href="#inscription"
+            className="btn btn-accent"
+            onClick={(e) => {
+              setMobileOpen(false);
+              scrollToHash(e, "#inscription");
+            }}
+          >
             S'inscrire
           </a>
         </nav>
@@ -303,7 +358,7 @@ function Hero({
             moment.
           </p>
           <div className="hero-cta">
-            <a href="#inscription" className="btn btn-light">
+            <a href="#inscription" className="btn btn-light" onClick={(e) => scrollToHash(e, "#inscription")}>
               S'inscrire au Tamebi Challenge →
             </a>
           </div>
@@ -358,8 +413,10 @@ function Stamp() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
-  // Pins the wordmark in place and zooms it up as the visitor scrolls through
-  // — a short, punchy "stamp" moment between Intro and Defi.
+  // Scales the heading up once as it comes into view — a short, punchy "stamp"
+  // moment right before the footer. (No pin/scrub: this used to sit mid-page
+  // with content flowing after it; pinning here — right before the footer —
+  // reserved scroll distance nothing filled, leaving a blank gap.)
   useEffect(() => {
     const section = sectionRef.current;
     const heading = headingRef.current;
@@ -368,11 +425,9 @@ function Stamp() {
     gsap.set(heading, { scale: 0.85 });
     const st = ScrollTrigger.create({
       trigger: section,
-      start: "top top",
-      end: "+=60%",
-      pin: true,
-      scrub: true,
-      onUpdate: (self) => gsap.set(heading, { scale: 0.85 + self.progress * 0.3 }),
+      start: "top 75%",
+      once: true,
+      onEnter: () => gsap.to(heading, { scale: 1, duration: 0.9, ease: "power2.out" }),
     });
     return () => st.kill();
   }, []);
@@ -615,10 +670,8 @@ function Partenaires() {
               </div>
             ))}
           </div>
-          <div className="ph reveal" style={{ aspectRatio: "4/5" }}>
-            <span className="glyph" aria-hidden="true">
-              <Handshake size={44} />
-            </span>
+          <div className="ph ph-light reveal" style={{ aspectRatio: "4/5" }}>
+            <PartenariatIllustration className="partenariat-illustration" />
           </div>
         </div>
 
@@ -647,7 +700,7 @@ function Partenaires() {
           >
             Devenir partenaire →
           </a>
-          <a href="#ressources" className="btn btn-light">
+          <a href="#ressources" className="btn btn-light" onClick={(e) => scrollToHash(e, "#ressources")}>
             Voir le dossier de sponsoring
           </a>
         </div>
@@ -886,12 +939,12 @@ function Footer() {
           </div>
           <div className="fcol">
             <h5>Navigation</h5>
-            <div><a href="#defi">Le défi</a></div>
-            <div><a href="#programme">Programme</a></div>
-            <div><a href="#prix">Prix</a></div>
-            <div><a href="#partenaires">Partenaires</a></div>
-            <div><a href="#ressources">Ressources</a></div>
-            <div><a href="#faq">FAQ</a></div>
+            <div><a href="#defi" onClick={(e) => scrollToHash(e, "#defi")}>Le défi</a></div>
+            <div><a href="#programme" onClick={(e) => scrollToHash(e, "#programme")}>Programme</a></div>
+            <div><a href="#prix" onClick={(e) => scrollToHash(e, "#prix")}>Prix</a></div>
+            <div><a href="#partenaires" onClick={(e) => scrollToHash(e, "#partenaires")}>Partenaires</a></div>
+            <div><a href="#ressources" onClick={(e) => scrollToHash(e, "#ressources")}>Ressources</a></div>
+            <div><a href="#faq" onClick={(e) => scrollToHash(e, "#faq")}>FAQ</a></div>
           </div>
           <div className="fcol">
             <h5>Statut</h5>

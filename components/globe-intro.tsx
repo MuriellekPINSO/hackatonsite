@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import createGlobe, { type Globe } from "cobe";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { TamebiWordmark } from "@/components/ui/tamebi-wordmark";
 
 const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
 
@@ -206,6 +207,7 @@ export default function GlobeIntro() {
       <div className="globe-intro-stage" ref={stageRef}>
         <div className="stamp-stars" aria-hidden="true" />
         <div className="globe-intro-overlay" ref={overlayRef}>
+          <TamebiWordmark className="globe-intro-wordmark" light />
           <div className="globe-wrap" ref={wrapRef}>
             <canvas ref={canvasRef} />
             <div className={`globe-flag${settled ? " in" : ""}`}>

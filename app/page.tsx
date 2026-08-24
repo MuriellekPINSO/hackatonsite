@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Image from "next/image";
@@ -10,10 +11,20 @@ import Bullhorn from "reicon-react/icons/Bullhorn";
 import Handshake from "reicon-react/icons/Handshake";
 import User from "reicon-react/icons/User";
 import Users from "reicon-react/icons/Users";
+import Users2 from "reicon-react/icons/Users2";
 import Laptop from "reicon-react/icons/Laptop";
+import Scroll from "reicon-react/icons/Scroll";
+import Palette from "reicon-react/icons/Palette";
 import type { IconComponent } from "reicon-react/createIcon";
 import HowItWorks from "@/components/ui/how-it-works";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
+import { DefiDiagram } from "@/components/ui/defi-diagram";
+import { PrizeCarousel } from "@/components/ui/prize-carousel";
+
+const GpuModelViewer = dynamic(
+  () => import("@/components/ui/gpu-model-viewer").then((m) => m.GpuModelViewer),
+  { ssr: false }
+);
 import GlobeIntro from "@/components/globe-intro";
 
 const GOLD = { bg: "bg-[#c24f2a]/10", text: "text-[#c24f2a]", border: "border-[#c24f2a]/20" };
@@ -127,7 +138,6 @@ export default function Page() {
       <Prix />
       <Partenaires />
       <Ressources />
-      <Marquee />
       <Eligibilite />
       <Faq />
       <Inscription />
@@ -258,6 +268,9 @@ function Intro() {
           </div>
         </div>
         <div className="ph intro-photo">
+          <span className="glyph" aria-hidden="true">
+            <Users2 size={44} />
+          </span>
           <div className="intro-photo-badge">
             <span>🇧🇯</span>
             <span>Cotonou, Bénin</span>
@@ -345,38 +358,32 @@ function Defi() {
           de mettre les mains dans l'inférence à très grande échelle, sur un modèle ouvert de pointe.
         </p>
 
-        <div className="grid3 reveal-stagger">
-          <SpotlightCard className="card">
-            <div className="num">01</div>
-            <h3>Héberger le modèle</h3>
-            <p>
-              Cluster réservé par Tamebi : <strong>8×NVIDIA H200 (141&nbsp;Go) ou 8×B200
-              (192&nbsp;Go)</strong>, soit ~1,1 à 1,5&nbsp;To de VRAM cumulée. Cible principale :{" "}
-              <strong>Kimi K2</strong> (Moonshot AI, ~1T paramètres MoE), qui tient confortablement
-              dans ce budget GPU. Kimi K3 (2,8T paramètres, poids ouverts depuis le 27 juillet 2026)
-              reste un objectif « stretch » si une quantification agressive et des tests de
-              faisabilité le permettent.
-            </p>
-          </SpotlightCard>
-          <SpotlightCard className="card">
-            <div className="num">02</div>
-            <h3>Servir via une API</h3>
-            <p>
-              Chaque équipe expose un endpoint fonctionnel (REST ou compatible OpenAI) pour
-              interroger le modèle hébergé, avec une documentation minimale et une démonstration de
-              latence/robustesse en conditions réelles.
-            </p>
-          </SpotlightCard>
-          <SpotlightCard className="card">
-            <div className="num">03</div>
-            <h3>Construire une application</h3>
-            <p>
-              Libre choix du cas d'usage — assistant métier, outil éducatif, agent autonome,
-              application grand public... L'idée compte moins que la qualité d'exécution :
-              l'application doit réellement consommer l'API construite à l'étape 2.
-            </p>
-          </SpotlightCard>
-        </div>
+        <DefiDiagram
+          model={<GpuModelViewer className="gpu-model" />}
+          steps={[
+            {
+              num: "01",
+              title: "Héberger le modèle",
+              description: (
+                <>
+                  Cluster réservé par Tamebi (<strong>8×NVIDIA H200 ou 8×B200</strong>, jusqu'à 1,5&nbsp;To de VRAM) pour héberger <strong>Kimi K2</strong> — et Kimi K3 en objectif stretch.
+                </>
+              ),
+            },
+            {
+              num: "02",
+              title: "Servir via une API",
+              description:
+                "Chaque équipe expose un endpoint REST (ou compatible OpenAI) qui interroge le modèle hébergé, avec une démonstration de latence et de robustesse en conditions réelles.",
+            },
+            {
+              num: "03",
+              title: "Construire une application",
+              description:
+                "Libre choix du cas d'usage, du moment que l'application consomme réellement l'API construite à l'étape 2.",
+            },
+          ]}
+        />
       </div>
     </section>
   );
@@ -436,36 +443,13 @@ function Prix() {
           Plutôt qu'une simple dotation, le Tamebi Challenge ouvre une porte d'entrée directe vers l'équipe
           Tamebi pour les talents qui se distinguent.
         </p>
-        <div className="prize-list reveal-stagger">
-          {[
-            ["1", "Équipe 1ère place"],
-            ["2", "Équipe 2ème place"],
-            ["3", "Équipe 3ème place"],
-          ].map(([rank, title]) => (
-            <div className="prize-row" key={rank}>
-              <div className="rank">{rank}</div>
-              <div>
-                <h4>{title}</h4>
-                <p style={{ color: "var(--ink-soft)", fontSize: "14.5px" }}>
-                  Entretien prioritaire pour rejoindre Tamebi, pour l'ensemble des membres de
-                  l'équipe.
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p
-          className="draft-note"
-          style={{
-            color: "var(--ink-soft)",
-            borderLeftColor: "var(--green)",
-            background: "var(--cream-2)",
-            marginTop: "26px",
-          }}
-        >
-          D'éventuelles dotations complémentaires (crédits cloud, matériel, cash prize) restent à
-          confirmer selon le budget final validé par Tamebi.
-        </p>
+        <PrizeCarousel
+          items={[
+            { rank: "1", title: "Équipe 1ère place", description: "Entretien prioritaire pour rejoindre Tamebi, pour l'ensemble des membres de l'équipe." },
+            { rank: "2", title: "Équipe 2ème place", description: "Entretien prioritaire pour rejoindre Tamebi, pour l'ensemble des membres de l'équipe." },
+            { rank: "3", title: "Équipe 3ème place", description: "Entretien prioritaire pour rejoindre Tamebi, pour l'ensemble des membres de l'équipe." },
+          ]}
+        />
       </div>
     </section>
   );
@@ -536,7 +520,11 @@ function Partenaires() {
               </div>
             ))}
           </div>
-          <div className="ph reveal" style={{ aspectRatio: "4/5" }} />
+          <div className="ph reveal" style={{ aspectRatio: "4/5" }}>
+            <span className="glyph" aria-hidden="true">
+              <Handshake size={44} />
+            </span>
+          </div>
         </div>
 
         <h3 className="reveal" style={{ fontSize: "22px", marginBottom: "28px" }}>
@@ -568,29 +556,16 @@ function Partenaires() {
             Voir le dossier de sponsoring
           </a>
         </div>
-        <p
-          className="draft-note"
-          style={{
-            color: "var(--ink-soft)",
-            borderLeftColor: "var(--green)",
-            background: "var(--cream-2)",
-            marginTop: "26px",
-            marginBottom: 0,
-          }}
-        >
-          Formules et contreparties indicatives — à valider avec Tamebi avant démarchage officiel des
-          partenaires.
-        </p>
       </div>
     </section>
   );
 }
 
 function Ressources() {
-  const items: [string, string, string][] = [
-    ["Règlement", "Règlement officiel Tamebi Challenge 2026", "Critères de notation, format des livrables, code de conduite. Publication à venir."],
-    ["Kit équipes", "Identité visuelle & templates", "Logos, bannières réseaux sociaux et template de pitch pour chaque équipe inscrite."],
-    ["Partenaires", "Dossier de sponsoring", "Vous voulez soutenir le Tamebi Challenge ? Le dossier partenaires sera disponible prochainement."],
+  const items: [IconComponent, string, string, string][] = [
+    [Scroll, "Règlement", "Règlement officiel Tamebi Challenge 2026", "Critères de notation, format des livrables, code de conduite. Publication à venir."],
+    [Palette, "Kit équipes", "Identité visuelle & templates", "Logos, bannières réseaux sociaux et template de pitch pour chaque équipe inscrite."],
+    [Handshake, "Partenaires", "Dossier de sponsoring", "Vous voulez soutenir le Tamebi Challenge ? Le dossier partenaires sera disponible prochainement."],
   ];
   return (
     <section id="ressources">
@@ -601,33 +576,19 @@ function Ressources() {
           Documents et supports mis à disposition avant et pendant l'événement.
         </p>
         <div className="grid3 reveal-stagger">
-          {items.map(([tag, title, text]) => (
+          {items.map(([Icon, tag, title, text], i) => (
             <div className="res-card" key={tag}>
-              <div className="ph" style={{ aspectRatio: "16/10" }} />
+              <div className={`ph ${["", "tone-b", "tone-c"][i]}`} style={{ aspectRatio: "16/10" }}>
+                <span className="glyph" aria-hidden="true">
+                  <Icon size={40} />
+                </span>
+              </div>
               <div className="body">
                 <span className="res-tag">{tag}</span>
                 <h4>{title}</h4>
                 <p>{text}</p>
               </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Marquee() {
-  const logos = ["TAMEBI", "PARTENAIRE GPU", "UNIVERSITÉ PARTENAIRE", "ÉCOSYSTÈME TECH BÉNIN"];
-  const track = [...logos, ...logos, ...logos];
-  return (
-    <section className="alt" style={{ padding: 0 }}>
-      <div className="marquee">
-        <div className="marquee-track">
-          {track.map((l, i) => (
-            <span className="partner-logo" key={i}>
-              {l}
-            </span>
           ))}
         </div>
       </div>

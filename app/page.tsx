@@ -884,6 +884,29 @@ function Faq() {
 
 function Inscription() {
   const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({ team: "", contact: "", email: "", phone: "", size: "2", city: "" });
+
+  const field =
+    (key: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const subject = `Inscription Tamebi Challenge 2026 — ${form.team}`;
+    const body = [
+      `Nom de l'équipe : ${form.team}`,
+      `Contact principal : ${form.contact}`,
+      `Email : ${form.email}`,
+      `Téléphone / WhatsApp : ${form.phone}`,
+      `Nombre de membres : ${form.size}`,
+      form.city && `Ville / université : ${form.city}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+    window.location.href = `mailto:challenge@tamebi.ai?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setSubmitted(true);
+  };
 
   return (
     <section id="inscription">
@@ -896,25 +919,50 @@ function Inscription() {
             </span>
             <h2>Prêt à héberger l'IA la plus puissante du moment ?</h2>
             <p className="lead">
-              Les inscriptions ouvriront prochainement. Laisse ton contact pour être informé en
-              priorité dès l'ouverture du formulaire officiel.
+              Inscris ton équipe (2 à 5 personnes) au Tamebi Challenge 2026 — on te recontacte pour
+              confirmer ta place.
             </p>
-            <form
-              className="cta-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSubmitted(true);
-                // TODO: brancher sur le vrai formulaire d'inscription (Google Form / Tally / API Tamebi)
-              }}
-            >
-              <label htmlFor="notify-email" className="sr-only">
-                Adresse email
-              </label>
-              <input id="notify-email" type="email" placeholder="ton@email.com" required />
-              <button type="submit" className="btn btn-light">
-                {submitted ? "Merci — à bientôt !" : "Être notifié →"}
-              </button>
-            </form>
+            {submitted ? (
+              <p className="reg-success">
+                Merci{form.contact ? ` ${form.contact}` : ""} — ton client email s'est ouvert avec les
+                infos pré-remplies, il ne reste plus qu'à l'envoyer !
+              </p>
+            ) : (
+              <form className="reg-form" onSubmit={handleSubmit}>
+                <div className="reg-field">
+                  <label htmlFor="reg-team">Nom de l'équipe</label>
+                  <input id="reg-team" required value={form.team} onChange={field("team")} placeholder="Les Wakandans du GPU" />
+                </div>
+                <div className="reg-field">
+                  <label htmlFor="reg-contact">Contact principal</label>
+                  <input id="reg-contact" required value={form.contact} onChange={field("contact")} placeholder="Prénom Nom" />
+                </div>
+                <div className="reg-field">
+                  <label htmlFor="reg-email">Email</label>
+                  <input id="reg-email" type="email" required value={form.email} onChange={field("email")} placeholder="ton@email.com" />
+                </div>
+                <div className="reg-field">
+                  <label htmlFor="reg-phone">Téléphone / WhatsApp</label>
+                  <input id="reg-phone" type="tel" required value={form.phone} onChange={field("phone")} placeholder="+229 ..." />
+                </div>
+                <div className="reg-field">
+                  <label htmlFor="reg-size">Membres de l'équipe</label>
+                  <select id="reg-size" value={form.size} onChange={field("size")}>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                </div>
+                <div className="reg-field">
+                  <label htmlFor="reg-city">Ville / université (optionnel)</label>
+                  <input id="reg-city" value={form.city} onChange={field("city")} placeholder="Cotonou, UAC..." />
+                </div>
+                <button type="submit" className="btn btn-light reg-submit">
+                  S'inscrire →
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>

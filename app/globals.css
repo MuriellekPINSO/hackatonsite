@@ -60,7 +60,7 @@
   body{
     background:var(--cream);
     color:var(--ink);
-    font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+    font-family:var(--font-google-sans),'Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
     line-height:1.6;
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
@@ -403,6 +403,16 @@
   .cta-form input{padding:15px 20px;border-radius:100px;border:1px solid rgba(247,247,249,.3);background:rgba(247,247,249,.06);color:var(--cream);font-size:14.5px;min-width:260px;transition:border-color .25s,box-shadow .25s;}
   .cta-form input::placeholder{color:rgba(247,247,249,.5);}
   .cta-form input:focus-visible{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(194,79,42,.25);}
+
+  .reg-form{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px;text-align:left;max-width:640px;margin-left:auto;margin-right:auto;}
+  .reg-field{display:flex;flex-direction:column;gap:6px;}
+  .reg-field label{font-size:12.5px;color:rgba(247,247,249,.6);font-weight:600;}
+  .reg-field input,.reg-field select{padding:13px 16px;border-radius:var(--radius-sm);border:1px solid rgba(247,247,249,.22);background:rgba(247,247,249,.06);color:var(--cream);font-size:14.5px;font-family:inherit;transition:border-color .25s,box-shadow .25s;color-scheme:dark;}
+  .reg-field input::placeholder{color:rgba(247,247,249,.4);}
+  .reg-field input:focus-visible,.reg-field select:focus-visible{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(194,79,42,.2);}
+  .reg-submit{grid-column:1 / -1;justify-self:center;margin-top:8px;}
+  .reg-success{color:var(--cream);font-size:15px;margin-top:24px;}
+  @media(max-width:640px){.reg-form{grid-template-columns:1fr;}}
 
   footer{position:relative;background:var(--green);color:rgba(247,247,249,.7);padding:56px 0 32px;margin-top:0;}
   footer::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg, transparent, rgba(247,247,249,.3), transparent);}

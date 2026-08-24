@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { googleSans } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" className={googleSans.variable}>
       <body>
         {/* Fixed-position UI (the nav) is portaled here — outside ScrollSmoother's
             transformed content — because CSS `position:fixed` breaks once an

@@ -49,6 +49,17 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        sans: [
+          "var(--font-google-sans)",
+          "Segoe UI",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

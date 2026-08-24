@@ -44,12 +44,14 @@ export function TamebiWordmark({
 
   return (
     <div ref={rootRef} className={className ? `tamebi-wordmark ${className}` : "tamebi-wordmark"}>
-      <img
-        className="tamebi-wordmark-icon"
-        src={light ? "/tamebi-tree-white.png" : "/tamebi-tree-dark.png"}
-        alt=""
-        aria-hidden="true"
-      />
+      <div className="tamebi-wordmark-icon-wrap">
+        <img
+          className="tamebi-wordmark-icon"
+          src={light ? "/tamebi-tree-white.png" : "/tamebi-tree-dark.png"}
+          alt=""
+          aria-hidden="true"
+        />
+      </div>
       <svg
         className="tamebi-wordmark-text"
         viewBox="285 425 1140 130"

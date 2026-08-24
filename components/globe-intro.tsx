@@ -192,6 +192,7 @@ export default function GlobeIntro() {
       start: "top top",
       end: "bottom bottom",
       scrub: true,
+      pin: stage,
       onUpdate: (self) => {
         const progress = self.progress;
         gsap.set(stage, { scale: 1 + progress * 1.5, opacity: 1 - progress });

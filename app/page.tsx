@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollSmoother } from "gsap/ScrollSmoother";
 import Image from "next/image";
 import Cloud from "reicon-react/icons/Cloud";
 import GraduationCap from "reicon-react/icons/GraduationCap";
@@ -33,27 +35,49 @@ const INK = { bg: "bg-[#303034]/[0.05]", text: "text-[#303034]", border: "border
 const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
 
 if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 }
 
 export default function Page() {
   const heroScrollRef = useRef<HTMLDivElement>(null);
+  const heroStageRef = useRef<HTMLDivElement>(null);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const heroTextRef = useRef<HTMLDivElement>(null);
   const heroOutroRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
+  const [fixedRoot, setFixedRoot] = useState<HTMLElement | null>(null);
+
+  // The nav is portaled to #fixed-root (see layout.tsx) so its position:fixed
+  // keeps working once ScrollSmoother puts a transform on the content wrapper.
+  useEffect(() => {
+    setFixedRoot(document.getElementById("fixed-root"));
+  }, []);
+
+  // ScrollSmoother wraps the whole page in inertia-smoothed scroll. It requires
+  // pinning (not CSS position:sticky) for elements that need to stay put while
+  // their section scrolls past — see hero-stage / globe-intro-stage below.
+  useEffect(() => {
+    const smoother = ScrollSmoother.create({
+      wrapper: "#smooth-wrapper",
+      content: "#smooth-content",
+      smooth: 1.1,
+      smoothTouch: 0.1,
+      normalizeScroll: true,
+    });
+    return () => smoother.kill();
+  }, []);
 
   // Hero video scroll-scrub + nav shadow + reveal-on-scroll, driven by GSAP
   // ScrollTrigger instead of hand-rolled rect/resize math.
   useEffect(() => {
     const heroScroll = heroScrollRef.current;
+    const heroStage = heroStageRef.current;
     const video = heroVideoRef.current;
     const heroText = heroTextRef.current;
     const heroOutro = heroOutroRef.current;
-    const nav = navRef.current;
     const cleanups: Array<() => void> = [];
 
-    // --- Hero video scroll-scrub ---
+    // --- Hero video scroll-scrub (pinned stage + parallaxed text layers) ---
     if (heroScroll && video) {
       let ready = video.readyState >= 1; // metadata may already be loaded before this runs
       const onLoadedMetadata = () => {
@@ -64,11 +88,18 @@ export default function Page() {
       // iOS/Safari sometimes needs a play/pause cycle to decode the first frame for scrubbing
       video.play().then(() => video.pause()).catch(() => {});
 
+      // Kicker/heading/lead/CTA drift at slightly different speeds as they fade
+      // — a cheap parallax that gives the exit some depth instead of one flat block.
+      const heroTextParts = heroText
+        ? Array.from(heroText.querySelectorAll<HTMLElement>(".kicker, h1, .lead, .hero-cta"))
+        : [];
+
       const st = ScrollTrigger.create({
         trigger: heroScroll,
         start: "top top",
         end: "bottom bottom",
         scrub: true,
+        pin: heroStage,
         onUpdate: (self) => {
           if (!ready || !isFinite(video.duration)) return;
           const progress = self.progress;
@@ -79,14 +110,15 @@ export default function Page() {
 
           // Intro text fades away early so the video plays clean, then a compact
           // caption fades in near the end of the scrub, aligned with the grid.
-          if (heroText) {
-            const fadeOut = clamp((progress - 0.1) / (0.32 - 0.1), 0, 1);
-            gsap.set(heroText, {
+          const fadeOut = clamp((progress - 0.1) / (0.32 - 0.1), 0, 1);
+          heroTextParts.forEach((part, i) => {
+            const depth = 1 + i * 0.35;
+            gsap.set(part, {
               opacity: 1 - fadeOut,
-              y: -24 * fadeOut,
+              y: -24 * fadeOut * depth,
               pointerEvents: fadeOut > 0.95 ? "none" : "auto",
             });
-          }
+          });
           if (heroOutro) {
             const fadeIn = clamp((progress - 0.74) / (0.94 - 0.74), 0, 1);
             gsap.set(heroOutro, { opacity: fadeIn, y: 16 * (1 - fadeIn) });
@@ -100,34 +132,73 @@ export default function Page() {
       });
     }
 
-    // --- Nav shadow on scroll ---
-    if (nav) {
-      const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 12);
-      window.addEventListener("scroll", onScroll, { passive: true });
-      onScroll();
-      cleanups.push(() => window.removeEventListener("scroll", onScroll));
-    }
-
-    // --- Reveal on scroll ---
-    const triggers = gsap.utils.toArray<HTMLElement>(".reveal, .reveal-stagger").map((el) =>
-      ScrollTrigger.create({
+    // --- Reveal on scroll (real GSAP tweens, not just a class toggle) ---
+    gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
+      gsap.set(el, { scale: 0.97 });
+      const trig = ScrollTrigger.create({
         trigger: el,
         start: "top 85%",
         once: true,
-        onEnter: () => el.classList.add("in"),
-      })
-    );
-    cleanups.push(() => triggers.forEach((t) => t.kill()));
+        onEnter: () => gsap.to(el, { opacity: 1, y: 0, scale: 1, duration: 0.9, ease: "power3.out" }),
+      });
+      cleanups.push(() => trig.kill());
+    });
+    gsap.utils.toArray<HTMLElement>(".reveal-stagger").forEach((el) => {
+      const children = gsap.utils.toArray<HTMLElement>(Array.from(el.children) as HTMLElement[]);
+      const trig = ScrollTrigger.create({
+        trigger: el,
+        start: "top 85%",
+        once: true,
+        onEnter: () => gsap.to(children, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out", stagger: 0.12 }),
+      });
+      cleanups.push(() => trig.kill());
+    });
 
     return () => cleanups.forEach((fn) => fn());
   }, []);
 
+  // Nav shadow on scroll + entrance + magnetic CTA. Kept in its own effect,
+  // keyed on fixedRoot: the nav mounts a render tick after fixedRoot is set
+  // (it's portaled — see above), so navRef.current isn't ready any earlier.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const cleanups: Array<() => void> = [];
+
+    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 12);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    cleanups.push(() => window.removeEventListener("scroll", onScroll));
+
+    gsap.fromTo(nav, { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 0.15 });
+
+    const accentBtn = nav.querySelector<HTMLElement>(".btn-accent");
+    if (accentBtn) {
+      const onMove = (e: MouseEvent) => {
+        const rect = accentBtn.getBoundingClientRect();
+        const relX = e.clientX - (rect.left + rect.width / 2);
+        const relY = e.clientY - (rect.top + rect.height / 2);
+        gsap.to(accentBtn, { x: relX * 0.3, y: relY * 0.3, duration: 0.3, ease: "power2.out" });
+      };
+      const onLeave = () => gsap.to(accentBtn, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1,0.4)" });
+      accentBtn.addEventListener("mousemove", onMove);
+      accentBtn.addEventListener("mouseleave", onLeave);
+      cleanups.push(() => {
+        accentBtn.removeEventListener("mousemove", onMove);
+        accentBtn.removeEventListener("mouseleave", onLeave);
+      });
+    }
+
+    return () => cleanups.forEach((fn) => fn());
+  }, [fixedRoot]);
+
   return (
     <>
-      <Nav navRef={navRef} />
+      {fixedRoot && createPortal(<Nav navRef={navRef} />, fixedRoot)}
       <GlobeIntro />
       <Hero
         heroScrollRef={heroScrollRef}
+        heroStageRef={heroStageRef}
         heroVideoRef={heroVideoRef}
         heroTextRef={heroTextRef}
         heroOutroRef={heroOutroRef}
@@ -202,18 +273,20 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
 
 function Hero({
   heroScrollRef,
+  heroStageRef,
   heroVideoRef,
   heroTextRef,
   heroOutroRef,
 }: {
   heroScrollRef: React.RefObject<HTMLDivElement | null>;
+  heroStageRef: React.RefObject<HTMLDivElement | null>;
   heroVideoRef: React.RefObject<HTMLVideoElement | null>;
   heroTextRef: React.RefObject<HTMLDivElement | null>;
   heroOutroRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <section className="hero-scroll" id="heroScroll" ref={heroScrollRef}>
-      <div className="hero-stage">
+      <div className="hero-stage" ref={heroStageRef}>
         <video className="hero-video" ref={heroVideoRef} muted playsInline preload="auto" aria-hidden="true">
           <source src="/gpu-assemble.mp4" type="video/mp4" />
         </video>
@@ -282,6 +355,28 @@ function Intro() {
 }
 
 function Stamp() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Pins the wordmark in place and zooms it up as the visitor scrolls through
+  // — a short, punchy "stamp" moment between Intro and Defi.
+  useEffect(() => {
+    const section = sectionRef.current;
+    const heading = headingRef.current;
+    if (!section || !heading) return;
+
+    gsap.set(heading, { scale: 0.85 });
+    const st = ScrollTrigger.create({
+      trigger: section,
+      start: "top top",
+      end: "+=60%",
+      pin: true,
+      scrub: true,
+      onUpdate: (self) => gsap.set(heading, { scale: 0.85 + self.progress * 0.3 }),
+    });
+    return () => st.kill();
+  }, []);
+
   const arcs = [
     "M600,355 C550,220 220,200 150,120",
     "M600,355 C560,210 340,160 320,110",
@@ -296,7 +391,7 @@ function Stamp() {
     [720, 160, 1.2], [860, 190, 1.5], [980, 220, 1.8],
   ];
   return (
-    <div className="stamp reveal">
+    <div className="stamp reveal" ref={sectionRef}>
       <div className="stamp-stars" aria-hidden="true" />
       <svg className="stamp-arcs" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
         <defs>
@@ -334,7 +429,7 @@ function Stamp() {
         ))}
       </svg>
       <div className="wrap" style={{ position: "relative", zIndex: 2 }}>
-        <h2>
+        <h2 ref={headingRef}>
           TAMEBI
           <br />
           CHALLENGE
@@ -674,13 +769,29 @@ function Faq() {
     },
   ];
   const [openIndex, setOpenIndex] = useState(0);
+  const answerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const prevOpenIndex = useRef(openIndex);
+
+  // GSAP-driven accordion: tweens to a real measured "auto" height instead of
+  // the old max-height guess, so long answers never get clipped.
+  useEffect(() => {
+    const prev = prevOpenIndex.current;
+    if (prev !== openIndex && prev !== -1 && answerRefs.current[prev]) {
+      gsap.to(answerRefs.current[prev], { height: 0, opacity: 0, duration: 0.35, ease: "power2.in" });
+    }
+    if (openIndex !== -1 && answerRefs.current[openIndex]) {
+      gsap.set(answerRefs.current[openIndex], { height: 0, opacity: 0 });
+      gsap.to(answerRefs.current[openIndex], { height: "auto", opacity: 1, duration: 0.5, ease: "power2.out" });
+    }
+    prevOpenIndex.current = openIndex;
+  }, [openIndex]);
 
   return (
     <section id="faq" className="alt">
       <div className="wrap" style={{ maxWidth: "820px" }}>
         <span className="kicker">FAQ</span>
         <h2 className="reveal">Questions fréquentes</h2>
-        <div style={{ marginTop: "24px" }}>
+        <div className="reveal-stagger" style={{ marginTop: "24px" }}>
           {items.map((item, i) => {
             const isOpen = openIndex === i;
             return (
@@ -701,7 +812,12 @@ function Faq() {
                   <span>{item.q}</span>
                   <span className="plus" />
                 </div>
-                <div className="faq-a" style={{ maxHeight: isOpen ? "400px" : "0px" }}>
+                <div
+                  className="faq-a"
+                  ref={(el) => {
+                    answerRefs.current[i] = el;
+                  }}
+                >
                   <p>{item.a}</p>
                 </div>
               </div>

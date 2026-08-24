@@ -2,6 +2,14 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+type ModelViewerLike = HTMLElement & { cameraOrbit: string; autoRotate: boolean };
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 interface Step {
   num: string;
@@ -78,6 +86,72 @@ export function DefiDiagram({ steps, model }: { steps: Step[]; model: ReactNode 
       ro.disconnect();
       window.removeEventListener("resize", compute);
     };
+  }, [steps.length]);
+
+  // Desktop-only: pin the diagram while the GPU model orbits a full turn and
+  // the three annotations highlight one-by-one in sync with scroll progress.
+  useEffect(() => {
+    const container = containerRef.current;
+    const modelWrap = modelRef.current;
+    if (!container || !modelWrap) return;
+
+    const mm = gsap.matchMedia();
+    mm.add("(min-width: 1024px)", () => {
+      // GpuModelViewer loads its custom element lazily (dynamic import), so
+      // the <model-viewer> tag may not exist yet at setup time — query it
+      // fresh on every callback instead of caching a possibly-null reference.
+      const getModel = () => modelWrap.querySelector("model-viewer") as ModelViewerLike | null;
+
+      const clearHighlight = () => {
+        annotationRefs.current.forEach((el) => el?.classList.remove("defi-active", "defi-dimmed"));
+      };
+
+      const st = ScrollTrigger.create({
+        trigger: container,
+        start: "top top",
+        end: "+=120%",
+        pin: true,
+        scrub: true,
+        onEnter: () => {
+          const mv = getModel();
+          if (mv) mv.autoRotate = false;
+        },
+        onEnterBack: () => {
+          const mv = getModel();
+          if (mv) mv.autoRotate = false;
+        },
+        onUpdate: (self) => {
+          const progress = self.progress;
+          const mv = getModel();
+          if (mv) mv.cameraOrbit = `${progress * 360}deg 75deg 205%`;
+          const activeIndex = Math.min(steps.length - 1, Math.floor(progress * steps.length));
+          annotationRefs.current.forEach((el, i) => {
+            if (!el) return;
+            el.classList.toggle("defi-active", i === activeIndex);
+            el.classList.toggle("defi-dimmed", i !== activeIndex);
+          });
+        },
+        onLeave: () => {
+          clearHighlight();
+          const mv = getModel();
+          if (mv) mv.autoRotate = true;
+        },
+        onLeaveBack: () => {
+          clearHighlight();
+          const mv = getModel();
+          if (mv) mv.autoRotate = true;
+        },
+      });
+
+      return () => {
+        st.kill();
+        clearHighlight();
+        const mv = getModel();
+        if (mv) mv.autoRotate = true;
+      };
+    });
+
+    return () => mm.revert();
   }, [steps.length]);
 
   return (

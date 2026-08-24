@@ -10,7 +10,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body>
+        {/* Fixed-position UI (the nav) is portaled here — outside ScrollSmoother's
+            transformed content — because CSS `position:fixed` breaks once an
+            ancestor has a transform applied to it. */}
+        <div id="fixed-root" />
+        <div id="smooth-wrapper">
+          <div id="smooth-content">{children}</div>
+        </div>
+      </body>
     </html>
   );
 }

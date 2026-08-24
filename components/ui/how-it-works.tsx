@@ -1,7 +1,12 @@
 "use client";
 
-import React from "react";
-import { LazyMotion, domAnimation, m } from "motion/react";
+import React, { useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 interface CardProps {
   number: string;
@@ -31,15 +36,10 @@ const Pin = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const Card = ({
-  number,
-  title,
-  description,
-  colorTheme = "blue",
-  className,
-  rotate,
-  colors: customColors,
-}: CardProps) => {
+const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
+  { number, title, description, colorTheme = "blue", className, rotate, colors: customColors },
+  ref
+) {
   const defaultBgColors = {
     orange: "bg-orange-50 dark:bg-orange-500/10",
     blue: "bg-blue-50 dark:bg-blue-500/10",
@@ -62,6 +62,7 @@ const Card = ({
 
   return (
     <div
+      ref={ref}
       className={`relative w-full md:w-[280px] transition-transform duration-300 hover:z-30 hover:scale-105 ${rotate} ${className}`}
     >
       <div className="bg-white dark:bg-neutral-900 p-2 rounded-[25px] shadow-[0px_10px_20px_0px_#D3D3D3] dark:shadow-none border border-neutral-100 dark:border-neutral-800">
@@ -87,7 +88,7 @@ const Card = ({
       </div>
     </div>
   );
-};
+});
 
 export interface Step {
   title: string;
@@ -173,98 +174,132 @@ export default function HowItWorks({
   else if (data.length === 4) height = 900;
   else height = 1130;
 
+  const stageRef = useRef<HTMLDivElement>(null);
+  const pathRef = useRef<SVGPathElement>(null);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // The connector path "draws" itself in sync with scroll instead of looping
+  // forever, and each card slides in from alternating sides as it appears.
+  useEffect(() => {
+    const stage = stageRef.current;
+    const path = pathRef.current;
+    if (!stage) return;
+    const cleanups: Array<() => void> = [];
+
+    if (path) {
+      const length = path.getTotalLength();
+      gsap.set(path, { strokeDasharray: length, strokeDashoffset: length });
+      const st = ScrollTrigger.create({
+        trigger: stage,
+        start: "top 75%",
+        end: "bottom 60%",
+        scrub: true,
+        onUpdate: (self) => gsap.set(path, { strokeDashoffset: length * (1 - self.progress) }),
+      });
+      cleanups.push(() => st.kill());
+    }
+
+    cardRefs.current.forEach((card, i) => {
+      if (!card) return;
+      const fromLeft = i % 2 === 0;
+      gsap.set(card, { opacity: 0, x: fromLeft ? -40 : 40, y: 20 });
+      const st = ScrollTrigger.create({
+        trigger: card,
+        start: "top 85%",
+        once: true,
+        onEnter: () => gsap.to(card, { opacity: 1, x: 0, y: 0, duration: 0.8, ease: "power3.out" }),
+      });
+      cleanups.push(() => st.kill());
+    });
+
+    return () => cleanups.forEach((fn) => fn());
+  }, [data.length]);
+
   return (
-    <LazyMotion features={domAnimation}>
+    <div
+      className={`bg-white dark:bg-black max-md:pt-10 max-md:pb-25 md:py-20 px-8 relative ${className}`}
+    >
       <div
-        className={`bg-white dark:bg-black max-md:pt-10 max-md:pb-25 md:py-20 px-8 relative ${className}`}
-      >
+        className="absolute inset-0 pointer-events-none opacity-[0.08] dark:opacity-[0.15]"
+        style={{
+          backgroundImage: "linear-gradient(#000 1px, transparent 1px)",
+          backgroundSize: "100% 32px",
+          marginTop: "4px",
+        }}
+      ></div>
+      <div
+        className="absolute inset-0 pointer-events-none opacity-0 dark:opacity-[0.1]"
+        style={{
+          backgroundImage: "linear-gradient(#fff 1px, transparent 1px)",
+          backgroundSize: "100% 32px",
+          marginTop: "4px",
+        }}
+      ></div>
+      <div className="from-background pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r"></div>
+      <div className="from-background pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l"></div>
+
+      <div className="max-w-6xl mx-auto relative z-10">
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.08] dark:opacity-[0.15]"
-          style={{
-            backgroundImage: "linear-gradient(#000 1px, transparent 1px)",
-            backgroundSize: "100% 32px",
-            marginTop: "4px",
-          }}
-        ></div>
-        <div
-          className="absolute inset-0 pointer-events-none opacity-0 dark:opacity-[0.1]"
-          style={{
-            backgroundImage: "linear-gradient(#fff 1px, transparent 1px)",
-            backgroundSize: "100% 32px",
-            marginTop: "4px",
-          }}
-        ></div>
-        <div className="from-background pointer-events-none absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r"></div>
-        <div className="from-background pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l"></div>
+          ref={stageRef}
+          className="relative w-full max-w-[1000px] mx-auto flex flex-col space-y-8 md:space-y-0 md:block h-auto md:h-[var(--md-height)]"
+          style={{ "--md-height": `${height}px` } as React.CSSProperties}
+        >
+          {data.length > 1 && (
+            <svg
+              className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block z-0"
+              viewBox={`0 0 1000 ${height}`}
+              preserveAspectRatio="none"
+            >
+              {(() => {
+                const pathD = data.reduce((acc, _, index) => {
+                  if (index >= data.length - 1) return acc;
+                  if (index === 0)
+                    return "M 290 150 C 500 150, 550 270, 710 270"; // 1 -> 2
+                  if (index === 1)
+                    return acc + " C 850 270, 500 350, 290 450"; // 2 -> 3
+                  if (index === 2)
+                    return acc + " C 290 600, 550 720, 750 720"; // 3 -> 4
+                  if (index === 3)
+                    return acc + " C 950 720, 500 800, 290 850"; // 4 -> 5
+                  return acc;
+                }, "");
+                return (
+                  <path
+                    ref={pathRef}
+                    d={pathD}
+                    stroke="currentColor"
+                    className="text-neutral-300 dark:text-neutral-700"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                );
+              })()}
+            </svg>
+          )}
 
-        <div className="max-w-6xl mx-auto relative z-10">
-          <div
-            className="relative w-full max-w-[1000px] mx-auto flex flex-col space-y-8 md:space-y-0 md:block h-auto md:h-[var(--md-height)]"
-            style={{ "--md-height": `${height}px` } as React.CSSProperties}
-          >
-            {data.length > 1 && (
-              <svg
-                className="absolute top-0 left-0 w-full h-full pointer-events-none hidden md:block z-0"
-                viewBox={`0 0 1000 ${height}`}
-                preserveAspectRatio="none"
-              >
-                {(() => {
-                  const pathD = data.reduce((acc, _, index) => {
-                    if (index >= data.length - 1) return acc;
-                    if (index === 0)
-                      return "M 290 150 C 500 150, 550 270, 710 270"; // 1 -> 2
-                    if (index === 1)
-                      return acc + " C 850 270, 500 350, 290 450"; // 2 -> 3
-                    if (index === 2)
-                      return acc + " C 290 600, 550 720, 750 720"; // 3 -> 4
-                    if (index === 3)
-                      return acc + " C 950 720, 500 800, 290 850"; // 4 -> 5
-                    return acc;
-                  }, "");
-                  return (
-                    <m.path
-                      d={pathD}
-                      stroke="currentColor"
-                      className="text-neutral-300 dark:text-neutral-700"
-                      strokeWidth="2"
-                      strokeDasharray="8 6"
-                      fill="none"
-                      strokeLinecap="round"
-                      vectorEffect="non-scaling-stroke"
-                      initial={{ strokeDashoffset: 0 }}
-                      animate={{
-                        strokeDashoffset: -140, // Multiple of 14 (8+6) for seamless loop
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                    />
-                  );
-                })()}
-              </svg>
-            )}
+          {data.map((step, index) => {
+            const position = positions[index % positions.length];
 
-            {data.map((step, index) => {
-              const position = positions[index % positions.length];
-
-              return (
-                <Card
-                  key={step.title}
-                  number={`0${index + 1}`}
-                  title={step.title}
-                  description={step.description}
-                  colorTheme={step.colorTheme || "blue"}
-                  colors={step.colors}
-                  rotate={position.rotate}
-                  className={position.className}
-                />
-              );
-            })}
-          </div>
+            return (
+              <Card
+                key={step.title}
+                ref={(el) => {
+                  cardRefs.current[index] = el;
+                }}
+                number={`0${index + 1}`}
+                title={step.title}
+                description={step.description}
+                colorTheme={step.colorTheme || "blue"}
+                colors={step.colors}
+                rotate={position.rotate}
+                className={position.className}
+              />
+            );
+          })}
         </div>
       </div>
-    </LazyMotion>
+    </div>
   );
 }

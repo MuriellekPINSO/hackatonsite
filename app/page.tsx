@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
-import Image from "next/image";
 import Cloud from "reicon-react/icons/Cloud";
 import GraduationCap from "reicon-react/icons/GraduationCap";
 import Bullhorn from "reicon-react/icons/Bullhorn";
@@ -17,12 +16,16 @@ import Users2 from "reicon-react/icons/Users2";
 import Laptop from "reicon-react/icons/Laptop";
 import Scroll from "reicon-react/icons/Scroll";
 import Palette from "reicon-react/icons/Palette";
+import Sun from "reicon-react/icons/Sun";
+import Moon from "reicon-react/icons/Moon";
 import type { IconComponent } from "reicon-react/createIcon";
 import HowItWorks from "@/components/ui/how-it-works";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { DefiDiagram } from "@/components/ui/defi-diagram";
 import { PartenariatIllustration } from "@/components/ui/partenariat-illustration";
 import { PrizeCarousel } from "@/components/ui/prize-carousel";
+import { TamebiLogo } from "@/components/ui/tamebi-logo";
+import InteractiveLines from "@/components/ui/interactive-lines";
 
 const GpuModelViewer = dynamic(
   () => import("@/components/ui/gpu-model-viewer").then((m) => m.GpuModelViewer),
@@ -30,10 +33,8 @@ const GpuModelViewer = dynamic(
 );
 import GlobeIntro from "@/components/globe-intro";
 
-const GOLD = { bg: "bg-[#c24f2a]/10", text: "text-[#c24f2a]", border: "border-[#c24f2a]/20" };
+const TEAL = { bg: "bg-[#44adab]/10", text: "text-[#44adab]", border: "border-[#44adab]/20" };
 const INK = { bg: "bg-[#303034]/[0.05]", text: "text-[#303034]", border: "border-[#303034]/15" };
-
-const clamp = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
@@ -76,11 +77,6 @@ function scrollToHash(e: React.MouseEvent<HTMLAnchorElement>, hash: string) {
 }
 
 export default function Page() {
-  const heroScrollRef = useRef<HTMLDivElement>(null);
-  const heroStageRef = useRef<HTMLDivElement>(null);
-  const heroVideoRef = useRef<HTMLVideoElement>(null);
-  const heroTextRef = useRef<HTMLDivElement>(null);
-  const heroOutroRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
   const [fixedRoot, setFixedRoot] = useState<HTMLElement | null>(null);
 
@@ -103,70 +99,9 @@ export default function Page() {
     return () => smoother.kill();
   }, []);
 
-  // Hero video scroll-scrub + nav shadow + reveal-on-scroll, driven by GSAP
-  // ScrollTrigger instead of hand-rolled rect/resize math.
+  // Reveal on scroll, driven by GSAP ScrollTrigger.
   useEffect(() => {
-    const heroScroll = heroScrollRef.current;
-    const heroStage = heroStageRef.current;
-    const video = heroVideoRef.current;
-    const heroText = heroTextRef.current;
-    const heroOutro = heroOutroRef.current;
     const cleanups: Array<() => void> = [];
-
-    // --- Hero video scroll-scrub (pinned stage + parallaxed text layers) ---
-    if (heroScroll && video) {
-      let ready = video.readyState >= 1; // metadata may already be loaded before this runs
-      const onLoadedMetadata = () => {
-        ready = true;
-        ScrollTrigger.refresh();
-      };
-      video.addEventListener("loadedmetadata", onLoadedMetadata);
-      // iOS/Safari sometimes needs a play/pause cycle to decode the first frame for scrubbing
-      video.play().then(() => video.pause()).catch(() => {});
-
-      // Kicker/heading/lead/CTA drift at slightly different speeds as they fade
-      // — a cheap parallax that gives the exit some depth instead of one flat block.
-      const heroTextParts = heroText
-        ? Array.from(heroText.querySelectorAll<HTMLElement>(".kicker, h1, .lead, .hero-cta"))
-        : [];
-
-      const st = ScrollTrigger.create({
-        trigger: heroScroll,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: true,
-        pin: heroStage,
-        onUpdate: (self) => {
-          if (!ready || !isFinite(video.duration)) return;
-          const progress = self.progress;
-          const target = progress * video.duration;
-          if (Math.abs(video.currentTime - target) > 0.03) {
-            video.currentTime = target;
-          }
-
-          // Intro text fades away early so the video plays clean, then a compact
-          // caption fades in near the end of the scrub, aligned with the grid.
-          const fadeOut = clamp((progress - 0.1) / (0.32 - 0.1), 0, 1);
-          heroTextParts.forEach((part, i) => {
-            const depth = 1 + i * 0.35;
-            gsap.set(part, {
-              opacity: 1 - fadeOut,
-              y: -24 * fadeOut * depth,
-              pointerEvents: fadeOut > 0.95 ? "none" : "auto",
-            });
-          });
-          if (heroOutro) {
-            const fadeIn = clamp((progress - 0.74) / (0.94 - 0.74), 0, 1);
-            gsap.set(heroOutro, { opacity: fadeIn, y: 16 * (1 - fadeIn) });
-          }
-        },
-      });
-
-      cleanups.push(() => {
-        video.removeEventListener("loadedmetadata", onLoadedMetadata);
-        st.kill();
-      });
-    }
 
     // --- Reveal on scroll (real GSAP tweens, not just a class toggle) ---
     gsap.utils.toArray<HTMLElement>(".reveal").forEach((el) => {
@@ -201,7 +136,17 @@ export default function Page() {
     if (!nav) return;
     const cleanups: Array<() => void> = [];
 
-    const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 12);
+    // Nav starts dark (matching the Globe/Hero intro it sits over) and turns
+    // light/solid once that dark intro has fully scrolled past — i.e. once
+    // the visitor reaches the white content pages, not on the first pixel
+    // of scroll (rect-based, not scrollY-based, since ScrollSmoother drives
+    // scroll via a transform that a raw scrollY threshold can't track).
+    const heroEl = document.getElementById("heroScroll");
+    const onScroll = () => {
+      nav.classList.toggle("scrolled", window.scrollY > 12);
+      const heroBottom = heroEl?.getBoundingClientRect().bottom ?? 0;
+      nav.classList.toggle("nav-light", heroBottom <= 0);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     cleanups.push(() => window.removeEventListener("scroll", onScroll));
@@ -232,13 +177,7 @@ export default function Page() {
     <>
       {fixedRoot && createPortal(<Nav navRef={navRef} />, fixedRoot)}
       <GlobeIntro />
-      <Hero
-        heroScrollRef={heroScrollRef}
-        heroStageRef={heroStageRef}
-        heroVideoRef={heroVideoRef}
-        heroTextRef={heroTextRef}
-        heroOutroRef={heroOutroRef}
-      />
+      <Hero />
       <Intro />
       <Defi />
       <Programme />
@@ -254,6 +193,40 @@ export default function Page() {
   );
 }
 
+function ThemeToggle({ className, showLabel = false }: { className?: string; showLabel?: boolean }) {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  // Reads the theme the blocking init script (layout.tsx) already stamped on
+  // <html>. Deferred to an effect (rather than a lazy useState initializer)
+  // so the very first client render matches the server's — otherwise the
+  // sun/moon icon would mismatch and trigger a hydration warning.
+  useEffect(() => {
+    setTheme((document.documentElement.getAttribute("data-theme") as "light" | "dark") || "light");
+  }, []);
+
+  const toggle = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    try {
+      localStorage.setItem("tamebi-theme", next);
+    } catch {}
+  };
+
+  return (
+    <button
+      type="button"
+      className={className ? `theme-toggle ${className}` : "theme-toggle"}
+      onClick={toggle}
+      aria-label={theme === "dark" ? "Passer au thème clair" : "Passer au thème sombre"}
+    >
+      {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+      {showLabel && <span>{theme === "dark" ? "Thème clair" : "Thème sombre"}</span>}
+    </button>
+  );
+}
+
 function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const links: [string, string][] = [
@@ -265,37 +238,48 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
     ["#faq", "FAQ"],
   ];
   return (
-    <header className="nav" id="siteNav" ref={navRef as React.RefObject<HTMLHeadElement>}>
-      <div className="nav-inner">
-        <div className="logo">
-          <Image src="/logo-tamebi.png" alt="Tamebi Challenge" width={150} height={41} priority />
-        </div>
-        <nav className="links">
-          {links.map(([href, label]) => (
-            <a href={href} key={href} onClick={(e) => scrollToHash(e, href)}>
-              {label}
-            </a>
-          ))}
-        </nav>
-        <a
-          href="#inscription"
-          className="btn btn-accent"
-          style={{ padding: "11px 22px", fontSize: "13.5px" }}
-          onClick={(e) => scrollToHash(e, "#inscription")}
-        >
-          S'inscrire
+    <>
+      <div className="nav-announce">
+        <a href="#inscription" onClick={(e) => scrollToHash(e, "#inscription")}>
+          Inscriptions bientôt ouvertes — sois notifié en priorité <span aria-hidden="true">→</span>
         </a>
-        <button
-          className="nav-toggle"
-          aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen((v) => !v)}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
       </div>
+      <header className="nav" id="siteNav" ref={navRef as React.RefObject<HTMLHeadElement>}>
+        <div className="nav-inner">
+          <div className="nav-left">
+            <div className="logo">
+              <TamebiLogo className="nav-logo" light />
+            </div>
+            <nav className="links">
+              {links.map(([href, label]) => (
+                <a href={href} key={href} onClick={(e) => scrollToHash(e, href)}>
+                  {label}
+                </a>
+              ))}
+            </nav>
+          </div>
+          <div className="nav-right">
+            <ThemeToggle />
+            <a
+              href="#inscription"
+              className="btn btn-accent"
+              style={{ padding: "11px 22px", fontSize: "13.5px" }}
+              onClick={(e) => scrollToHash(e, "#inscription")}
+            >
+              S'inscrire
+            </a>
+            <button
+              className="nav-toggle"
+              aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((v) => !v)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
+        </div>
       {mobileOpen && (
         <nav className="nav-mobile">
           {links.map(([href, label]) => (
@@ -320,33 +304,27 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
           >
             S'inscrire
           </a>
+          <ThemeToggle className="theme-toggle-mobile" showLabel />
         </nav>
       )}
-    </header>
+      </header>
+    </>
   );
 }
 
-function Hero({
-  heroScrollRef,
-  heroStageRef,
-  heroVideoRef,
-  heroTextRef,
-  heroOutroRef,
-}: {
-  heroScrollRef: React.RefObject<HTMLDivElement | null>;
-  heroStageRef: React.RefObject<HTMLDivElement | null>;
-  heroVideoRef: React.RefObject<HTMLVideoElement | null>;
-  heroTextRef: React.RefObject<HTMLDivElement | null>;
-  heroOutroRef: React.RefObject<HTMLDivElement | null>;
-}) {
+function Hero() {
   return (
-    <section className="hero-scroll" id="heroScroll" ref={heroScrollRef}>
-      <div className="hero-stage" ref={heroStageRef}>
-        <video className="hero-video" ref={heroVideoRef} muted playsInline preload="auto" aria-hidden="true">
-          <source src="/gpu-assemble.mp4" type="video/mp4" />
-        </video>
-        <div className="hero-overlay" />
-        <div className="wrap hero-inner hero" ref={heroTextRef}>
+    <section className="hero-scroll" id="heroScroll">
+      <div className="hero-stage">
+        <InteractiveLines
+          backgroundColor="#000000"
+          lineColor="#ffffff"
+          lineWidth={1}
+          minLines={8}
+          maxLines={22}
+          style={{ zIndex: 0, opacity: 0.5 }}
+        />
+        <div className="wrap hero-inner hero reveal">
           <span className="kicker">Powered by Tamebi</span>
           <h1>
             Le plus grand
@@ -362,11 +340,7 @@ function Hero({
               S'inscrire au Tamebi Challenge →
             </a>
           </div>
-        </div>
-        <div className="wrap hero hero-outro" ref={heroOutroRef}>
-          <span className="kicker" style={{ marginBottom: 0 }}>
-            Cotonou, Bénin · 19–20 sept. 2026*
-          </span>
+          <p className="hero-meta">Cotonou, Bénin · 19–20 sept. 2026*</p>
         </div>
       </div>
     </section>
@@ -411,9 +385,9 @@ function Intro() {
 
 function Stamp() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const headingRef = useRef<HTMLDivElement>(null);
 
-  // Scales the heading up once as it comes into view — a short, punchy "stamp"
+  // Scales the logo up once as it comes into view — a short, punchy "stamp"
   // moment right before the footer. (No pin/scrub: this used to sit mid-page
   // with content flowing after it; pinning here — right before the footer —
   // reserved scroll distance nothing filled, leaving a blank gap.)
@@ -451,9 +425,9 @@ function Stamp() {
       <svg className="stamp-arcs" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
         <defs>
           <linearGradient id="stampGrad" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stopColor="#c24f2a" stopOpacity={0} />
-            <stop offset="45%" stopColor="#c24f2a" stopOpacity={0.7} />
-            <stop offset="100%" stopColor="#c24f2a" stopOpacity={0} />
+            <stop offset="0%" stopColor="#44adab" stopOpacity={0} />
+            <stop offset="45%" stopColor="#44adab" stopOpacity={0.7} />
+            <stop offset="100%" stopColor="#44adab" stopOpacity={0} />
           </linearGradient>
         </defs>
         {arcs.map((d, i) => (
@@ -464,7 +438,7 @@ function Stamp() {
             key={`flow-${i}`}
             d={d}
             fill="none"
-            stroke="#ffb59b"
+            stroke="#ffffff"
             strokeWidth="2.2"
             strokeLinecap="round"
             className="stamp-flow"
@@ -484,11 +458,9 @@ function Stamp() {
         ))}
       </svg>
       <div className="wrap" style={{ position: "relative", zIndex: 2 }}>
-        <h2 ref={headingRef}>
-          TAMEBI
-          <br />
-          CHALLENGE
-        </h2>
+        <div className="stamp-logo-wrap" ref={headingRef}>
+          <TamebiLogo className="stamp-logo" light />
+        </div>
         <p>
           Le Bénin ne consomme pas l'IA la plus puissante du monde. <strong>Il la fait tourner.</strong>
         </p>
@@ -545,7 +517,7 @@ function Programme() {
       title: "Accueil, constitution des équipes & briefing technique",
       description:
         "H+0 → Présentation du modèle hébergé, attribution des accès au cluster 8×H200/B200, formation des équipes (2 à 5 personnes) et lancement officiel.",
-      colors: GOLD,
+      colors: TEAL,
     },
     {
       title: "Déploiement & premiers tests d'inférence",
@@ -557,7 +529,7 @@ function Programme() {
       title: "Bloc de développement principal",
       description:
         "H+6 → H+22 → Construction de l'application, intégration continue à l'API, itérations avec les mentors. C'est le cœur du sprint.",
-      colors: GOLD,
+      colors: TEAL,
     },
     {
       title: "Finalisation & tests de charge",
@@ -569,7 +541,7 @@ function Programme() {
       title: "Démonstrations live & jury",
       description:
         "H+27 → H+30 → Chaque équipe présente son endpoint API et son application devant le jury Tamebi. Annonce des résultats et entretiens des 3 premières équipes.",
-      colors: GOLD,
+      colors: TEAL,
     },
   ];
 

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { TamebiWordmark } from "@/components/ui/tamebi-wordmark";
+import { TamebiLogo } from "@/components/ui/tamebi-logo";
 
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
@@ -215,7 +215,7 @@ export function PrizeCarousel({
               aria-label={`${index + 1} of ${count}`}
               className={`prize-carousel-card${index === selected ? " is-active" : ""}`}
             >
-              <TamebiWordmark className="prize-carousel-logo" />
+              <TamebiLogo className="prize-carousel-logo" />
               <div className="rank">{item.rank}</div>
               <h3>{item.title}</h3>
               <p>{item.description}</p>

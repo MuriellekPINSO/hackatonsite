@@ -26,6 +26,7 @@ import { PartenariatIllustration } from "@/components/ui/partenariat-illustratio
 import { PrizeCarousel } from "@/components/ui/prize-carousel";
 import { TamebiLogo } from "@/components/ui/tamebi-logo";
 import InteractiveLines from "@/components/ui/interactive-lines";
+import FireworkCursor from "@/components/ui/firework-cursor";
 
 const GpuModelViewer = dynamic(
   () => import("@/components/ui/gpu-model-viewer").then((m) => m.GpuModelViewer),
@@ -248,7 +249,7 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
         <div className="nav-inner">
           <div className="nav-left">
             <div className="logo">
-              <TamebiLogo className="nav-logo" light />
+              <TamebiLogo className="nav-logo" />
             </div>
             <nav className="links">
               {links.map(([href, label]) => (
@@ -324,6 +325,17 @@ function Hero() {
           maxLines={22}
           style={{ zIndex: 0, opacity: 0.5 }}
         />
+        <div className="hero-firework">
+          <FireworkCursor
+            label={false}
+            color="#ffffff"
+            colors={["#ffffff", "#ffffff"]}
+            density={18}
+            size={0.8}
+            lifetime={1}
+            bloomStrength={15}
+          />
+        </div>
         <div className="wrap hero-inner hero reveal">
           <span className="kicker">Powered by Tamebi</span>
           <h1>

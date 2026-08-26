@@ -245,6 +245,7 @@
   /* HERO — dark, GlitterWrap starfield plays as a plain looping background */
   .hero-scroll{position:relative;padding:0;background:#000;}
   .hero-stage{position:relative;height:100vh;overflow:hidden;display:flex;flex-direction:column;justify-content:center;z-index:1;}
+  .hero-firework{position:absolute;inset:0;z-index:1;}
   .hero{color:var(--fixed-light);}
   .hero-inner{max-width:900px;position:relative;z-index:2;}
   .hero .kicker{color:rgba(247,247,249,.72);text-shadow:0 1px 12px rgba(0,0,0,.55);}

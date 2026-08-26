@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
@@ -12,7 +13,6 @@ import Bullhorn from "reicon-react/icons/Bullhorn";
 import Handshake from "reicon-react/icons/Handshake";
 import User from "reicon-react/icons/User";
 import Users from "reicon-react/icons/Users";
-import Users2 from "reicon-react/icons/Users2";
 import Laptop from "reicon-react/icons/Laptop";
 import Scroll from "reicon-react/icons/Scroll";
 import Palette from "reicon-react/icons/Palette";
@@ -390,9 +390,13 @@ function Intro() {
           </div>
         </div>
         <div className="ph intro-photo">
-          <span className="glyph" aria-hidden="true">
-            <Users2 size={44} />
-          </span>
+          <Image
+            src="/student4.png"
+            alt="Étudiantes lors d'un hackathon"
+            fill
+            sizes="(max-width: 860px) 100vw, 500px"
+            style={{ objectFit: "cover" }}
+          />
           <div className="intro-photo-badge">
             <span>🇧🇯</span>
             <span>Cotonou, Bénin</span>

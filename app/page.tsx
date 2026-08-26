@@ -27,6 +27,7 @@ import { PrizeCarousel } from "@/components/ui/prize-carousel";
 import { TamebiLogo } from "@/components/ui/tamebi-logo";
 import InteractiveLines from "@/components/ui/interactive-lines";
 import FireworkCursor from "@/components/ui/firework-cursor";
+import LiquidCarveButton from "@/components/ui/liquid-carve-button";
 
 const GpuModelViewer = dynamic(
   () => import("@/components/ui/gpu-model-viewer").then((m) => m.GpuModelViewer),
@@ -348,9 +349,16 @@ function Hero() {
             moment.
           </p>
           <div className="hero-cta">
-            <a href="#inscription" className="btn btn-light" onClick={(e) => scrollToHash(e, "#inscription")}>
-              S'inscrire au Tamebi Challenge →
-            </a>
+            <LiquidCarveButton
+              label="S'inscrire au Tamebi Challenge →"
+              link="#inscription"
+              onClick={(e) => scrollToHash(e as React.MouseEvent<HTMLAnchorElement>, "#inscription")}
+              colors={{ fill: "#ffffff", textColor: "#131314" }}
+              blob={{ color: "#44adab", size: 70, smoothness: 50 }}
+              font={{ fontSize: "14px", fontWeight: 600 }}
+              rounded={100}
+              padding="13px 26px"
+            />
           </div>
           <p className="hero-meta">Cotonou, Bénin · 19–20 sept. 2026*</p>
         </div>

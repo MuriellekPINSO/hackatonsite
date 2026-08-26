@@ -3,7 +3,20 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 
-export function TamebiLogo({ className, light = false }: { className?: string; light?: boolean }) {
+export function TamebiLogo({
+  className,
+  light = false,
+  scrollTrigger = false,
+}: {
+  className?: string;
+  light?: boolean;
+  /** Wait until the logo actually scrolls into view before playing the
+   * reveal, instead of firing on mount. Mount-time works fine for the logos
+   * visible at first paint (nav, globe intro), but a usage further down the
+   * page (e.g. the Stamp section) would otherwise finish its reveal off-screen
+   * before anyone ever sees it. */
+  scrollTrigger?: boolean;
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -19,19 +32,39 @@ export function TamebiLogo({ className, light = false }: { className?: string; l
     }
 
     gsap.set(paths, { opacity: 0, y: 6 });
-    const tween = gsap.to(paths, {
-      opacity: 1,
-      y: 0,
-      duration: 0.5,
-      ease: "power2.out",
-      stagger: 0.02,
-      delay: 0.15,
-    });
+    const play = () =>
+      gsap.to(paths, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: "power2.out",
+        stagger: 0.02,
+        delay: 0.15,
+      });
+
+    if (!scrollTrigger) {
+      const tween = play();
+      return () => {
+        tween.kill();
+      };
+    }
+
+    let tween: gsap.core.Tween | null = null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        tween = play();
+        observer.disconnect();
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(svg);
 
     return () => {
-      tween.kill();
+      observer.disconnect();
+      tween?.kill();
     };
-  }, []);
+  }, [scrollTrigger]);
 
   return (
     <svg

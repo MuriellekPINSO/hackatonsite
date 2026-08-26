@@ -471,7 +471,7 @@ function Stamp() {
       </svg>
       <div className="wrap" style={{ position: "relative", zIndex: 2 }}>
         <div className="stamp-logo-wrap" ref={headingRef}>
-          <TamebiLogo className="stamp-logo" light />
+          <TamebiLogo className="stamp-logo" light scrollTrigger />
         </div>
         <p>
           Le Bénin ne consomme pas l'IA la plus puissante du monde. <strong>Il la fait tourner.</strong>

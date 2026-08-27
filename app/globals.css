@@ -688,9 +688,14 @@
   .sponsor-card:hover{
     border-color:var(--line-strong);box-shadow:var(--shadow-md);transform:translateY(-2px);
   }
+  /* Le calque DÉBORDE de la carte : l'inset négatif est posé par le composant,
+     pour que le bord des rectangles pleine page (redurci par le seuil alpha du
+     filtre goo) tombe hors champ. Pas d'overflow ni de border-radius ici donc :
+     c'est l'overflow:hidden + le border-radius animé de .sponsor-card qui
+     redécoupent le calque, et c'est justement ce qui fait que la morsure épouse
+     le morph au lieu d'une forme figée. */
   .liquid-blob-layer{
-    position:absolute;inset:0;z-index:0;pointer-events:none;
-    border-radius:inherit;overflow:hidden;
+    position:absolute;z-index:0;pointer-events:none;
   }
   /* Le contenu doit rester au-dessus de la goutte. */
   .sponsor-wordmark,.sponsor-note,.sponsor-logo{position:relative;z-index:1;}

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 // Ported from a Framer "GlitterWrap" component (canvas starfield warp-tunnel
-// with glittering sparkle flashes) — Framer-specific bits (RenderTarget,
+// with glittering sparkle flashes); Framer-specific bits (RenderTarget,
 // property-control Props/COMPONENT_DEFAULTS, static-export warm-up) stripped,
 // everything else (star physics, additive compositing, trail fade) kept as-is.
 

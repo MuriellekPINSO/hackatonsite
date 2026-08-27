@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 
-// Ported from a Framer "Reactive Lines" component (canvas hero background —
+// Ported from a Framer "Reactive Lines" component (canvas hero background:
 // mouse-reactive bundle of curved lines with a radial vignette fade).
 // Already framework-agnostic (no Framer-specific APIs), kept as-is.
 
@@ -191,7 +191,7 @@ export default function InteractiveLines({
 
   const { containerRef, canvasRef, stateRef } = useCanvasAnimation({
     // Starts immediately at a centered mouse position instead of waiting for
-    // a first mousemove — this is a hero background, visible before anyone
+    // a first mousemove: this is a hero background, visible before anyone
     // necessarily touches the mouse (and never, on touch devices).
     deferStart: false,
 

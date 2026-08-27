@@ -4,7 +4,7 @@ import * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState, useId } from "react";
 import { useAnimate, useReducedMotion, type Transition } from "framer-motion";
 
-/** Rounded is a percent of the MAXIMUM possible radius — half the short side —
+/** Rounded is a percent of the MAXIMUM possible radius (half the short side)
  *  so 100 is a true pill at any button size and 0 is a square corner. A CSS
  *  percentage border-radius is not the same thing: it resolves per axis and
  *  gives an ellipse, so a wide button would bulge instead of forming a stadium.
@@ -16,14 +16,14 @@ const radiusFromPercent = (w: number, h: number, pct: number) => (Math.min(w, h)
 // fall back on the server to silence the warning.
 const useIsoLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
-// feGaussianBlur stdDeviation for the goo filter. Fixed — high enough to round
+// feGaussianBlur stdDeviation for the goo filter. Fixed: high enough to round
 // the carve into a concave blob with shoulders, low enough to keep the pill edge
 // crisp. Not exposed: it's a tuning constant, not a design knob.
 const GOO_STRENGTH = 8;
 
 /** Smoothness is how far the blob LAGS the cursor: 0 pins it to the pointer,
  *  100 lets it drift a long way behind. It is the time constant of an
- *  exponential follow — the blob is ALWAYS moving toward the pointer and always
+ *  exponential follow: the blob is ALWAYS moving toward the pointer and always
  *  decelerating, which is what reads as drift. */
 const FOLLOW_TAU_MIN = 0.02; // seconds to close 63% of the gap, at Smoothness 0
 const FOLLOW_TAU_MAX = 0.4; // …and at 100
@@ -33,7 +33,7 @@ const SQUASH_TAU = 0.09;
 const SQUASH_PER_PX_PER_SEC = 0.0011;
 const SQUASH_MAX = 1.6;
 
-// Floaty by default — low stiffness, extra mass = liquid drift, not a snap.
+// Floaty by default: low stiffness, extra mass = liquid drift, not a snap.
 const DEFAULT_TRANSITION: Transition = {
   type: "spring",
   stiffness: 110,
@@ -117,15 +117,15 @@ type Props = {
 };
 
 /**
- * Liquid Carve Button — a liquid blob erodes the surface as it tracks the cursor.
+ * Liquid Carve Button: a liquid blob erodes the surface as it tracks the cursor.
  *
  * The blob is SUBTRACTIVE, not additive: an SVG <mask> knocks a circular hole
  * out of the pill, then a goo filter (feGaussianBlur + feColorMatrix alpha
- * threshold) rounds that hole into a concave blob with shoulders — surface
+ * threshold) rounds that hole into a concave blob with shoulders: surface
  * tension where the bite meets an edge. A reveal layer behind the pill shows the
  * blob color through the carve, so it reads on any background.
  *
- * Ported from a Framer component — the `framer` property-controls import/call
+ * Ported from a Framer component: the `framer` property-controls import/call
  * is Framer-canvas-only and has been stripped; everything else (framer-motion's
  * useAnimate, the goo SVG filter, the pointer-chase loop) is plain React.
  */

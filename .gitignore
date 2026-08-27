@@ -5,3 +5,6 @@ out
 .DS_Store
 *.tsbuildinfo
 .vercel
+
+# Repli fichier du store en dev (voir lib/store.ts)
+.data/

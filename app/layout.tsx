@@ -3,13 +3,13 @@ import { googleSans } from "./fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tamebi Challenge 2026 — Le plus grand hackathon IA du Bénin | Tamebi",
+  title: "Tamebi Challenge 2026 : Le plus grand hackathon IA du Bénin | Tamebi",
   description:
     "30h pour déployer un LLM open-source de pointe sur un cluster 8×H200/B200, le servir via API et construire une application. Organisé par Tamebi, Cotonou, septembre 2026.",
 };
 
 // Blocking, runs before first paint so the page never flashes the wrong
-// theme — reads the saved choice (or the OS preference the first time) and
+// theme: reads the saved choice (or the OS preference the first time) and
 // stamps it on <html> before React hydrates. Sets both data-theme (our own
 // CSS variables in globals.css) and the "dark" class (Tailwind's darkMode:
 // "class" strategy, used by the shadcn-derived components) so both systems
@@ -28,8 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        {/* Fixed-position UI (the nav) is portaled here — outside ScrollSmoother's
-            transformed content — because CSS `position:fixed` breaks once an
+        {/* Fixed-position UI (the nav) is portaled here (outside ScrollSmoother's
+            transformed content) because CSS `position:fixed` breaks once an
             ancestor has a transform applied to it. */}
         <div id="fixed-root" />
         <div id="smooth-wrapper">

@@ -22,7 +22,7 @@ export interface CoverflowCarouselProps {
   rotate?: number;
   /** How far the first neighbour recedes, as a fraction of card width. */
   depth?: number;
-  /** Viewer distance as a multiple of card width — smaller is a wider lens. */
+  /** Viewer distance as a multiple of card width: smaller is a wider lens. */
   perspective?: number;
   /** Exponent on distance. Below 1 the rake eases off as cards travel out. */
   falloff?: number;
@@ -98,7 +98,7 @@ export function CoverflowCarousel({
       if (!card) return;
 
       // Fold the distance into the shorter way round the ring. This is the
-      // whole looping mechanism — no cloned nodes, no shuffling the DOM.
+      // whole looping mechanism: no cloned nodes, no shuffling the DOM.
       let offset = index - pos;
       if (loop) {
         offset = ((offset % count) + count) % count;
@@ -106,7 +106,7 @@ export function CoverflowCarousel({
       }
 
       const distance = Math.abs(offset);
-      // Both the tilt and the recession ease off as cards travel out —
+      // Both the tilt and the recession ease off as cards travel out:
       // doubling the distance adds only about half again as much of each.
       // A linear ramp folds the second card shut; this keeps it readable.
       const ramp = Math.pow(distance, falloff);
@@ -216,7 +216,7 @@ export function CoverflowCarousel({
   };
 
   // Card width drives pitch, depth and perspective, so it is the only thing
-  // worth measuring — and only when the box actually changes.
+  // worth measuring, and only when the box actually changes.
   useIsoLayoutEffect(() => {
     const frame = frameRef.current;
     if (!frame) return;

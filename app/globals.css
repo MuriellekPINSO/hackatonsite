@@ -263,16 +263,6 @@
      que la timeline puisse l'animer pendant le zoom. */
   .africa-country{fill:rgba(247,247,249,.07);stroke:#f7f7f9;stroke-width:.8;}
   .benin-shape{fill:var(--teal);fill-opacity:0;stroke:var(--accent-on-dark);stroke-width:1.4;stroke-linejoin:round;}
-  /* Pastille posée sur le Bénin pendant le plan large. Le décalage la met à
-     droite du pays plutôt que dessus : sinon elle masque la forme qu'on vient
-     justement de révéler. */
-  .benin-pill{
-    position:absolute;transform:translate(14px,-50%);
-    display:flex;align-items:center;gap:8px;padding:7px 15px;border-radius:100px;
-    background:rgba(13,13,16,.72);border:1px solid rgba(255,181,155,.35);
-    backdrop-filter:blur(6px);
-    color:var(--fixed-light);font-weight:700;font-size:14px;white-space:nowrap;
-  }
   /* Dans le flux, sous la carte : plus de calage en `bottom` à recaler à chaque
      changement de hauteur de la scène. */
   .benin-caption{
@@ -288,7 +278,6 @@
   }
   @media(max-width:640px){
     .africa-map{height:54vh;}
-    .benin-pill{font-size:12.5px;padding:6px 12px;transform:translate(10px,-50%);}
   }
 
   /* HERO : dark, GlitterWrap starfield plays as a plain looping background */

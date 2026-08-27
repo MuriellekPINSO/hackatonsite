@@ -47,7 +47,6 @@ export default function GlobeIntro() {
   const svgRef = useRef<SVGSVGElement>(null);
   const africaRef = useRef<SVGPathElement>(null);
   const beninRef = useRef<SVGPathElement>(null);
-  const pillRef = useRef<HTMLDivElement>(null);
   const captionRef = useRef<HTMLParagraphElement>(null);
   const [settled, setSettled] = useState(false);
   const [spinSpeed, setSpinSpeed] = useState(2.4);
@@ -82,9 +81,8 @@ export default function GlobeIntro() {
     const svg = svgRef.current;
     const africa = africaRef.current;
     const benin = beninRef.current;
-    const pill = pillRef.current;
     const caption = captionRef.current;
-    if (!section || !stage || !overlay || !map || !svg || !africa || !benin || !pill || !caption) return;
+    if (!section || !stage || !overlay || !map || !svg || !africa || !benin || !caption) return;
 
     // Le tracé du Bénin se dessine : on mesure sa longueur réelle pour piloter
     // strokeDashoffset. getTotalLength() est en unités utilisateur de la
@@ -97,7 +95,7 @@ export default function GlobeIntro() {
       strokeDasharray: outlineLength,
       strokeDashoffset: outlineLength,
     });
-    gsap.set([pill, caption], { opacity: 0 });
+    gsap.set(caption, { opacity: 0 });
     gsap.set(svg, { attr: { viewBox: FULL_VIEWBOX } });
 
     const tl = gsap.timeline({
@@ -121,9 +119,7 @@ export default function GlobeIntro() {
       // 3. Le Bénin se dessine puis se remplit.
       .to(benin, { strokeDashoffset: 0, duration: 0.12 }, 0.4)
       .to(benin, { fillOpacity: 1, duration: 0.08 }, 0.48)
-      .to(pill, { opacity: 1, duration: 0.06 }, 0.52)
-      // 4. Zoom sur le pays : l'étiquette s'efface, la légende prend le relais.
-      .to(pill, { opacity: 0, duration: 0.05 }, 0.62)
+      // 4. Zoom sur le pays, puis la légende prend le relais.
       .to(svg, { attr: { viewBox: ZOOM_VIEWBOX }, duration: 0.24, ease: "power1.inOut" }, 0.62)
       // Les frontières voisines s'estompent pendant le zoom. Deux raisons : ça
       // isole la forme du Bénin, qui est le sujet du plan ; et ça masque le seul
@@ -208,17 +204,6 @@ export default function GlobeIntro() {
               />
               <path className="benin-shape" ref={beninRef} d={BENIN_PATH} vectorEffect="non-scaling-stroke" />
             </svg>
-            <div
-              className="benin-pill"
-              ref={pillRef}
-              style={{
-                left: `${(BENIN_CENTROID.x / AFRICA_VIEWBOX.width) * 100}%`,
-                top: `${(BENIN_CENTROID.y / AFRICA_VIEWBOX.height) * 100}%`,
-              }}
-            >
-              <span className="globe-flag-emoji">🇧🇯</span>
-              <span>Bénin</span>
-            </div>
           </div>
           <p className="benin-caption" ref={captionRef}>
             <strong>République du Bénin</strong>

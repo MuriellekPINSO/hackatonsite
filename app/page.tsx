@@ -22,7 +22,6 @@ import type { IconComponent } from "reicon-react/createIcon";
 import HowItWorks from "@/components/ui/how-it-works";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { DefiDiagram } from "@/components/ui/defi-diagram";
-import { PartenariatIllustration } from "@/components/ui/partenariat-illustration";
 import { PrizeCarousel } from "@/components/ui/prize-carousel";
 import { TamebiLogo } from "@/components/ui/tamebi-logo";
 import InteractiveLines from "@/components/ui/interactive-lines";
@@ -397,10 +396,7 @@ function Intro() {
             sizes="(max-width: 860px) 100vw, 500px"
             style={{ objectFit: "cover" }}
           />
-          <div className="intro-photo-badge">
-            <span>🇧🇯</span>
-            <span>Cotonou, Bénin</span>
-          </div>
+          <span className="intro-photo-dot" aria-hidden="true" />
         </div>
       </div>
     </section>
@@ -667,7 +663,13 @@ function Partenaires() {
             ))}
           </div>
           <div className="ph ph-light reveal" style={{ aspectRatio: "4/5" }}>
-            <PartenariatIllustration className="partenariat-illustration" />
+            <Image
+              src="/par.png"
+              alt="Poignée de main entre deux partenaires"
+              fill
+              sizes="(max-width: 860px) 100vw, 500px"
+              style={{ objectFit: "cover" }}
+            />
           </div>
         </div>
 

@@ -70,14 +70,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(function Card(
         <div
           className={`${bgColor} border ${borderColor} rounded-[15px] p-[15px] h-full flex flex-col relative overflow-hidden`}
         >
-          <span
-            className={`${textColor} text-4xl font-handwriting mb-5`}
-            style={{
-              fontFamily: '"Comic Sans MS", "Chalkboard SE", sans-serif',
-            }}
-          >
-            {number}
-          </span>
+          <span className={`${textColor} text-4xl font-bold mb-5`}>{number}</span>
           <h3 className="text-2xl font-semibold text-neutral-800 dark:text-neutral-100 leading-none mb-[10px]">
             {title}
           </h3>

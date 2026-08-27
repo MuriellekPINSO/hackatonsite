@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { CSSProperties } from "react";
 
-// Ported from a Framer "Wave Arcs" component (canvas hero background — sweeping
+// Ported from a Framer "Wave Arcs" component (canvas hero background: sweeping
 // tangent-arc lines fanning from a point below the viewport, mouse-reactive).
 // Already framework-agnostic (no Framer-specific APIs), kept as-is.
 

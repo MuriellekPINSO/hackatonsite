@@ -1,4 +1,4 @@
-// Globe — Originkit
+// Globe (Originkit)
 // Using component defaults.
 
 "use client";
@@ -978,8 +978,7 @@ export default function Globe({
                         color: "#ffffff",
                         textAlign: "center",
                         padding: "16px",
-                        fontFamily:
-                            "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+                        fontFamily: "inherit",
                     }}
                 >
                     <div style={{ fontSize: "16px", fontWeight: 600 }}>

@@ -28,6 +28,21 @@ import { TamebiLogo } from "@/components/ui/tamebi-logo";
 import InteractiveLines from "@/components/ui/interactive-lines";
 import FireworkCursor from "@/components/ui/firework-cursor";
 import LiquidCarveButton from "@/components/ui/liquid-carve-button";
+import SponsorMarquee, { type Sponsor } from "@/components/ui/sponsor-marquee";
+import Scoreboard from "@/components/ui/scoreboard";
+import CompetitionSearch from "@/components/ui/competition-search";
+import { type RankedTeam } from "@/lib/competition";
+import { useCompetition } from "@/lib/use-competition";
+import {
+  EMPTY_REGISTRATION,
+  MAX_MEMBERS,
+  MIN_MEMBERS,
+  hasErrors,
+  normalizeRegistration,
+  validateRegistration,
+  type RegistrationErrors,
+  type RegistrationInput,
+} from "@/lib/registration";
 
 const GpuModelViewer = dynamic(
   () => import("@/components/ui/gpu-model-viewer").then((m) => m.GpuModelViewer),
@@ -46,41 +61,75 @@ if (typeof window !== "undefined") {
 // <a href="#id"> anchor jump no longer lands in the right place. Worse:
 // smoother.scrollTo(target, true) and tweening smoother.scrollTop both reuse
 // the ambient wheel-scroll lag (the `smooth` constant), which keeps
-// re-applying no matter how the position is set — window.scrollY reaches the
+// re-applying no matter how the position is set: window.scrollY reaches the
 // target within ~1s but the visual transform then creeps for several MORE
 // seconds, so a nav click looks like it lands somewhere wrong.
 // smoother.scrollTo(target, false) is the one call confirmed to position
 // instantly and correctly, so we drive our own eased tween and feed it that
 // call every frame instead of letting GSAP proxy `scrollTop` directly.
-function scrollToHash(e: React.MouseEvent<HTMLAnchorElement>, hash: string) {
-  e.preventDefault();
+// All programmatic scrolling funnels through here. ScrollSmoother drives
+// scroll with a CSS transform, so window.scrollTo / scrollIntoView land in the
+// wrong place; smoother.scrollTo(y, false) is the one call confirmed to
+// position instantly and correctly, so we tween our own value and feed it that
+// call every frame instead of letting GSAP proxy `scrollTop` directly.
+function smoothScrollTo(targetY: number) {
+  const smoother = ScrollSmoother.get();
+  if (!smoother) {
+    window.scrollTo({ top: targetY, behavior: "smooth" });
+    return;
+  }
+  const startY = smoother.scrollTop();
+  gsap.to(
+    { y: startY },
+    {
+      y: targetY,
+      duration: 0.9,
+      ease: "power2.inOut",
+      overwrite: true,
+      onUpdate() {
+        smoother.scrollTo(this.targets()[0].y, false);
+      },
+    }
+  );
+}
+
+/** Position d'un élément dans le document, quelle que soit la source du scroll. */
+function documentTop(el: HTMLElement) {
+  const smoother = ScrollSmoother.get();
+  const current = smoother ? smoother.scrollTop() : window.scrollY;
+  return el.getBoundingClientRect().top + current;
+}
+
+function scrollToTarget(hash: string) {
   const el = document.querySelector<HTMLElement>(hash);
   if (!el) return;
-  const smoother = ScrollSmoother.get();
-  if (smoother) {
-    const startY = smoother.scrollTop();
-    const targetY = el.getBoundingClientRect().top + startY;
-    gsap.to(
-      { y: startY },
-      {
-        y: targetY,
-        duration: 0.9,
-        ease: "power2.inOut",
-        overwrite: true,
-        onUpdate() {
-          smoother.scrollTo(this.targets()[0].y, false);
-        },
-      }
-    );
-  } else {
-    el.scrollIntoView({ behavior: "smooth" });
-  }
+  smoothScrollTo(documentTop(el));
   window.history.pushState(null, "", hash);
+}
+
+function scrollToHash(e: React.MouseEvent<HTMLAnchorElement>, hash: string) {
+  e.preventDefault();
+  scrollToTarget(hash);
+}
+
+/** Centre un élément dans la fenêtre : utilisé pour amener une ligne du
+ *  scoreboard sous les yeux quand elle est choisie dans la recherche du hero. */
+function scrollElementToCenter(el: HTMLElement) {
+  const gap = Math.max(0, (window.innerHeight - el.getBoundingClientRect().height) / 2);
+  smoothScrollTo(Math.max(0, documentTop(el) - gap));
 }
 
 export default function Page() {
   const navRef = useRef<HTMLElement>(null);
   const [fixedRoot, setFixedRoot] = useState<HTMLElement | null>(null);
+
+  // Équipe choisie dans la recherche du hero, relayée au scoreboard. Le nonce
+  // sert à re-déclencher le scroll quand c'est deux fois la même équipe.
+  const [focus, setFocus] = useState<{ teamId: string; nonce: number }>({ teamId: "", nonce: 0 });
+
+  // Source unique des équipes : la recherche du hero et le scoreboard lisent le
+  // même état, donc une équipe qui vient de s'inscrire apparaît dans les deux.
+  const competition = useCompetition();
 
   // The nav is portaled to #fixed-root (see layout.tsx) so its position:fixed
   // keeps working once ScrollSmoother puts a transform on the content wrapper.
@@ -90,7 +139,7 @@ export default function Page() {
 
   // ScrollSmoother wraps the whole page in inertia-smoothed scroll. It requires
   // pinning (not CSS position:sticky) for elements that need to stay put while
-  // their section scrolls past — see hero-stage / globe-intro-stage below.
+  // their section scrolls past; see hero-stage / globe-intro-stage below.
   useEffect(() => {
     const smoother = ScrollSmoother.create({
       wrapper: "#smooth-wrapper",
@@ -132,14 +181,14 @@ export default function Page() {
 
   // Nav shadow on scroll + entrance + magnetic CTA. Kept in its own effect,
   // keyed on fixedRoot: the nav mounts a render tick after fixedRoot is set
-  // (it's portaled — see above), so navRef.current isn't ready any earlier.
+  // (it's portaled, see above), so navRef.current isn't ready any earlier.
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
     const cleanups: Array<() => void> = [];
 
     // Nav starts dark (matching the Globe/Hero intro it sits over) and turns
-    // light/solid once that dark intro has fully scrolled past — i.e. once
+    // light/solid once that dark intro has fully scrolled past, i.e. once
     // the visitor reaches the white content pages, not on the first pixel
     // of scroll (rect-based, not scrollY-based, since ScrollSmoother drives
     // scroll via a transform that a raw scrollY threshold can't track).
@@ -179,16 +228,43 @@ export default function Page() {
     <>
       {fixedRoot && createPortal(<Nav navRef={navRef} />, fixedRoot)}
       <GlobeIntro />
-      <Hero />
+      <Hero
+        teams={competition.teams}
+        // Un seul scroll, pas deux : le scoreboard amène lui-même la ligne au
+        // centre (via scrollToRow). Lancer en plus un scroll vers #scoreboard
+        // ferait tourner deux tweens concurrents, et le second calculerait sa
+        // cible depuis un getBoundingClientRect() pris en pleine course, donc
+        // à côté.
+        onSelectTeam={(teamId) => setFocus((f) => ({ teamId, nonce: f.nonce + 1 }))}
+      />
       <Intro />
+      <Sponsors />
       <Defi />
       <Programme />
       <Prix />
+      <Scoreboard
+        teams={competition.teams}
+        updatedAt={competition.updatedAt}
+        error={competition.error}
+        refreshing={competition.refreshing}
+        onRefresh={competition.refresh}
+        focusTeamId={focus.teamId || null}
+        focusNonce={focus.nonce}
+        scrollToRow={scrollElementToCenter}
+      />
       <Partenaires />
       <Ressources />
       <Eligibilite />
       <Faq />
-      <Inscription />
+      <Inscription
+        onRegistered={(teamId) => {
+          // Relevé immédiat pour que l'équipe soit là tout de suite, et mise en
+          // avant SANS toucher au nonce : on surligne sa ligne sans faire
+          // défiler la page loin du message de confirmation.
+          competition.refresh();
+          setFocus((f) => ({ ...f, teamId }));
+        }}
+      />
       <Stamp />
       <Footer />
     </>
@@ -200,7 +276,7 @@ function ThemeToggle({ className, showLabel = false }: { className?: string; sho
 
   // Reads the theme the blocking init script (layout.tsx) already stamped on
   // <html>. Deferred to an effect (rather than a lazy useState initializer)
-  // so the very first client render matches the server's — otherwise the
+  // so the very first client render matches the server's; otherwise the
   // sun/moon icon would mismatch and trigger a hydration warning.
   useEffect(() => {
     setTheme((document.documentElement.getAttribute("data-theme") as "light" | "dark") || "light");
@@ -235,6 +311,7 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
     ["#defi", "Le défi"],
     ["#programme", "Programme"],
     ["#prix", "Prix"],
+    ["#scoreboard", "Classement"],
     ["#partenaires", "Partenaires"],
     ["#ressources", "Ressources"],
     ["#faq", "FAQ"],
@@ -243,7 +320,7 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
     <>
       <div className="nav-announce">
         <a href="#inscription" onClick={(e) => scrollToHash(e, "#inscription")}>
-          Inscriptions bientôt ouvertes — sois notifié en priorité <span aria-hidden="true">→</span>
+          Inscriptions bientôt ouvertes : sois notifié en priorité <span aria-hidden="true">→</span>
         </a>
       </div>
       <header className="nav" id="siteNav" ref={navRef as React.RefObject<HTMLHeadElement>}>
@@ -314,7 +391,13 @@ function Nav({ navRef }: { navRef: React.RefObject<HTMLElement | null> }) {
   );
 }
 
-function Hero() {
+function Hero({
+  teams,
+  onSelectTeam,
+}: {
+  teams: RankedTeam[];
+  onSelectTeam: (teamId: string) => void;
+}) {
   return (
     <section className="hero-scroll" id="heroScroll">
       <div className="hero-stage">
@@ -360,6 +443,19 @@ function Hero() {
               padding="13px 26px"
             />
           </div>
+          <div className="hero-find">
+            <CompetitionSearch teams={teams} onSelectTeam={onSelectTeam} />
+            <p className="hero-find-hint">
+              <strong>{teams.length} équipes</strong> ·{" "}
+              {teams.reduce((sum, t) => sum + t.members.length, 0)} participants inscrits. Cherchez
+              un nom pour ouvrir sa ligne dans le{" "}
+              <a href="#scoreboard" onClick={(e) => scrollToHash(e, "#scoreboard")}>
+                classement en direct
+              </a>
+              .
+            </p>
+          </div>
+
           <p className="hero-meta">Cotonou, Bénin · 19–20 sept. 2026*</p>
         </div>
       </div>
@@ -380,7 +476,7 @@ function Intro() {
             moment, pas seulement la consommer.
           </p>
           <p className="lead" style={{ marginBottom: "26px" }}>
-            30 heures de sprint, un cluster GPU de niveau recherche, et un objectif commun — un
+            30 heures de sprint, un cluster GPU de niveau recherche, et un objectif commun : un
             endpoint API qui tourne, et une application qui le prouve.
           </p>
           <div className="intro-pills">
@@ -411,9 +507,9 @@ function Stamp() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLDivElement>(null);
 
-  // Scales the logo up once as it comes into view — a short, punchy "stamp"
+  // Scales the logo up once as it comes into view: a short, punchy "stamp"
   // moment right before the footer. (No pin/scrub: this used to sit mid-page
-  // with content flowing after it; pinning here — right before the footer —
+  // with content flowing after it; pinning here (right before the footer)
   // reserved scroll distance nothing filled, leaving a blank gap.)
   useEffect(() => {
     const section = sectionRef.current;
@@ -493,6 +589,44 @@ function Stamp() {
   );
 }
 
+// ⚠️ PLACEHOLDERS de développement : à remplacer par les vrais sponsors (et
+// leurs logos dans /public) avant la mise en ligne. `logo` est facultatif :
+// sans fichier, la carte affiche proprement le nom en wordmark.
+const SPONSORS: Sponsor[] = [
+  { name: "Sponsor GPU", note: "Calcul" },
+  { name: "Cloud Partner", note: "Infrastructure" },
+  { name: "Université partenaire", note: "Académique" },
+  { name: "Incubateur", note: "Écosystème" },
+  { name: "Opérateur télécom", note: "Connectivité" },
+  { name: "Média tech", note: "Visibilité" },
+  { name: "Fonds d'amorçage", note: "Prix" },
+  { name: "Communauté dev", note: "Mobilisation" },
+];
+
+function Sponsors() {
+  return (
+    <section className="sponsors-band">
+      <div className="wrap">
+        <div className="sponsors-head reveal">
+          <h2>Ils rendent le Tamebi Challenge possible</h2>
+          <p className="lead">
+            Le challenge est financé sur fonds Tamebi et porté par un cercle de partenaires qui
+            apportent du calcul, des lieux, des relais et des prix.
+          </p>
+        </div>
+      </div>
+      <SponsorMarquee label="Avec le soutien de" sponsors={SPONSORS} />
+      <div className="wrap">
+        <div className="sponsors-cta reveal">
+          <a href="#partenaires" className="btn btn-light" onClick={(e) => scrollToHash(e, "#partenaires")}>
+            Devenir sponsor →
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Defi() {
   return (
     <section id="defi">
@@ -512,7 +646,7 @@ function Defi() {
               title: "Héberger le modèle",
               description: (
                 <>
-                  Cluster réservé par Tamebi (<strong>8×NVIDIA H200 ou 8×B200</strong>, jusqu'à 1,5&nbsp;To de VRAM) pour héberger <strong>Kimi K2</strong> — et Kimi K3 en objectif stretch.
+                  Cluster réservé par Tamebi (<strong>8×NVIDIA H200 ou 8×B200</strong>, jusqu'à 1,5&nbsp;To de VRAM) pour héberger <strong>Kimi K2</strong>, et Kimi K3 en objectif stretch.
                 </>
               ),
             },
@@ -878,31 +1012,90 @@ function Faq() {
   );
 }
 
-function Inscription() {
-  const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({ team: "", contact: "", email: "", phone: "", size: "2", city: "" });
+function Inscription({
+  onRegistered,
+}: {
+  /** Remonte l'équipe créée : la page relance un relevé pour qu'elle apparaisse
+   *  tout de suite dans le classement et la recherche, au lieu d'attendre le
+   *  prochain sondage (20 s). */
+  onRegistered: (teamId: string) => void;
+}) {
+  const [form, setForm] = useState<RegistrationInput>(EMPTY_REGISTRATION);
+  const [errors, setErrors] = useState<RegistrationErrors>({});
+  const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
+  const [created, setCreated] = useState<{ name: string; id: string } | null>(null);
 
   const field =
-    (key: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [key]: e.target.value }));
+    (key: "team" | "city" | "tagline" | "contact" | "email" | "phone") =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setForm((f) => ({ ...f, [key]: value }));
+      // Efface l'erreur du champ dès la première correction : garder le message
+      // affiché pendant que la personne retape donne l'impression que sa
+      // correction n'est pas prise en compte.
+      setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+    };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const subject = `Inscription Tamebi Challenge 2026 — ${form.team}`;
-    const body = [
-      `Nom de l'équipe : ${form.team}`,
-      `Contact principal : ${form.contact}`,
-      `Email : ${form.email}`,
-      `Téléphone / WhatsApp : ${form.phone}`,
-      `Nombre de membres : ${form.size}`,
-      form.city && `Ville / université : ${form.city}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-    window.location.href = `mailto:challenge@tamebi.ai?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSubmitted(true);
+  const memberField = (index: number, key: "name" | "role") => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setForm((f) => ({
+      ...f,
+      members: f.members.map((m, i) => (i === index ? { ...m, [key]: value } : m)),
+    }));
   };
+
+  const addMember = () =>
+    setForm((f) =>
+      f.members.length >= MAX_MEMBERS ? f : { ...f, members: [...f.members, { name: "", role: "" }] }
+    );
+
+  const removeMember = (index: number) =>
+    setForm((f) =>
+      f.members.length <= MIN_MEMBERS
+        ? f
+        : { ...f, members: f.members.filter((_, i) => i !== index) }
+    );
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (status === "sending") return;
+
+    const normalized = normalizeRegistration(form);
+    const localErrors = validateRegistration(normalized);
+    if (hasErrors(localErrors)) {
+      setErrors(localErrors);
+      return;
+    }
+
+    setStatus("sending");
+    setErrors({});
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(normalized),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // Le serveur renvoie les erreurs par champ (422/409) : on les réaffiche
+        // sous les bons champs plutôt qu'en un message générique.
+        setErrors(data.errors ?? { form: data.error ?? "L'inscription a échoué." });
+        setStatus("idle");
+        return;
+      }
+
+      const team = { name: data.team?.name ?? normalized.team, id: data.team?.id ?? "" };
+      setCreated(team);
+      setStatus("done");
+      if (team.id) onRegistered(team.id);
+    } catch {
+      setErrors({ form: "Connexion impossible. Vérifie ton réseau et réessaie." });
+      setStatus("idle");
+    }
+  };
+
+  const namedMembers = form.members.filter((m) => m.name.trim().length > 0).length;
 
   return (
     <section id="inscription">
@@ -915,47 +1108,170 @@ function Inscription() {
             </span>
             <h2>Prêt à héberger l'IA la plus puissante du moment ?</h2>
             <p className="lead">
-              Inscris ton équipe (2 à 5 personnes) au Tamebi Challenge 2026 — on te recontacte pour
-              confirmer ta place.
+              Inscris ton équipe ({MIN_MEMBERS} à {MAX_MEMBERS} personnes) au Tamebi Challenge
+              2026 : elle apparaît aussitôt dans le classement en direct.
             </p>
-            {submitted ? (
-              <p className="reg-success">
-                Merci{form.contact ? ` ${form.contact}` : ""} — ton client email s'est ouvert avec les
-                infos pré-remplies, il ne reste plus qu'à l'envoyer !
-              </p>
+
+            {status === "done" ? (
+              <div className="reg-success" role="status">
+                <p>
+                  <strong>{created?.name}</strong> est inscrite. On te recontacte par email pour
+                  confirmer ta place.
+                </p>
+                <a
+                  href="#scoreboard"
+                  className="btn btn-light"
+                  onClick={(e) => scrollToHash(e, "#scoreboard")}
+                >
+                  Voir l'équipe dans le classement →
+                </a>
+              </div>
             ) : (
-              <form className="reg-form" onSubmit={handleSubmit}>
+              <form className="reg-form" onSubmit={handleSubmit} noValidate>
                 <div className="reg-field">
                   <label htmlFor="reg-team">Nom de l'équipe</label>
-                  <input id="reg-team" required value={form.team} onChange={field("team")} placeholder="Les Wakandans du GPU" />
+                  <input
+                    id="reg-team"
+                    value={form.team}
+                    onChange={field("team")}
+                    placeholder="Les Wakandans du GPU"
+                    aria-invalid={!!errors.team}
+                    aria-describedby={errors.team ? "err-team" : undefined}
+                  />
+                  {errors.team && (
+                    <p className="reg-error" id="err-team">
+                      {errors.team}
+                    </p>
+                  )}
+                </div>
+                <div className="reg-field">
+                  <label htmlFor="reg-city">Ville / université</label>
+                  <input
+                    id="reg-city"
+                    value={form.city}
+                    onChange={field("city")}
+                    placeholder="Cotonou, UAC..."
+                    aria-invalid={!!errors.city}
+                  />
+                  {errors.city && <p className="reg-error">{errors.city}</p>}
+                </div>
+                <div className="reg-field reg-field-wide">
+                  <label htmlFor="reg-tagline">Votre projet en une ligne (optionnel)</label>
+                  <input
+                    id="reg-tagline"
+                    value={form.tagline}
+                    onChange={field("tagline")}
+                    placeholder="Assistant juridique RAG en fon et en français"
+                    aria-invalid={!!errors.tagline}
+                  />
+                  {errors.tagline && <p className="reg-error">{errors.tagline}</p>}
                 </div>
                 <div className="reg-field">
                   <label htmlFor="reg-contact">Contact principal</label>
-                  <input id="reg-contact" required value={form.contact} onChange={field("contact")} placeholder="Prénom Nom" />
+                  <input
+                    id="reg-contact"
+                    value={form.contact}
+                    onChange={field("contact")}
+                    placeholder="Prénom Nom"
+                    aria-invalid={!!errors.contact}
+                    aria-describedby={errors.contact ? "err-contact" : undefined}
+                  />
+                  {errors.contact && (
+                    <p className="reg-error" id="err-contact">
+                      {errors.contact}
+                    </p>
+                  )}
                 </div>
                 <div className="reg-field">
                   <label htmlFor="reg-email">Email</label>
-                  <input id="reg-email" type="email" required value={form.email} onChange={field("email")} placeholder="ton@email.com" />
+                  <input
+                    id="reg-email"
+                    type="email"
+                    value={form.email}
+                    onChange={field("email")}
+                    placeholder="ton@email.com"
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? "err-email" : undefined}
+                  />
+                  {errors.email && (
+                    <p className="reg-error" id="err-email">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
                 <div className="reg-field">
                   <label htmlFor="reg-phone">Téléphone / WhatsApp</label>
-                  <input id="reg-phone" type="tel" required value={form.phone} onChange={field("phone")} placeholder="+229 ..." />
+                  <input
+                    id="reg-phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={field("phone")}
+                    placeholder="+229 ..."
+                    aria-invalid={!!errors.phone}
+                    aria-describedby={errors.phone ? "err-phone" : undefined}
+                  />
+                  {errors.phone && (
+                    <p className="reg-error" id="err-phone">
+                      {errors.phone}
+                    </p>
+                  )}
                 </div>
-                <div className="reg-field">
-                  <label htmlFor="reg-size">Membres de l'équipe</label>
-                  <select id="reg-size" value={form.size} onChange={field("size")}>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                  </select>
+
+                <div className="reg-field reg-field-wide">
+                  <label>
+                    Membres de l'équipe
+                    <span className="reg-count">
+                      {namedMembers}/{MAX_MEMBERS}
+                    </span>
+                  </label>
+                  <div className="reg-members">
+                    {form.members.map((m, i) => (
+                      <div className="reg-member" key={i}>
+                        <input
+                          value={m.name}
+                          onChange={memberField(i, "name")}
+                          placeholder={`Nom du membre ${i + 1}`}
+                          aria-label={`Nom du membre ${i + 1}`}
+                          aria-invalid={!!errors.members?.[i]}
+                        />
+                        <input
+                          value={m.role}
+                          onChange={memberField(i, "role")}
+                          placeholder="Rôle (ex. Lead infra)"
+                          aria-label={`Rôle du membre ${i + 1}`}
+                        />
+                        <button
+                          type="button"
+                          className="reg-member-remove"
+                          onClick={() => removeMember(i)}
+                          disabled={form.members.length <= MIN_MEMBERS}
+                          aria-label={`Retirer le membre ${i + 1}`}
+                        >
+                          ✕
+                        </button>
+                        {errors.members?.[i] && <p className="reg-error">{errors.members[i]}</p>}
+                      </div>
+                    ))}
+                  </div>
+                  {form.members.length < MAX_MEMBERS && (
+                    <button type="button" className="reg-add-member" onClick={addMember}>
+                      + Ajouter un membre
+                    </button>
+                  )}
                 </div>
-                <div className="reg-field">
-                  <label htmlFor="reg-city">Ville / université (optionnel)</label>
-                  <input id="reg-city" value={form.city} onChange={field("city")} placeholder="Cotonou, UAC..." />
-                </div>
-                <button type="submit" className="btn btn-light reg-submit">
-                  S'inscrire →
+
+                {errors.form && (
+                  <p className="reg-error reg-error-form" role="alert">
+                    {errors.form}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-light reg-submit"
+                  disabled={status === "sending"}
+                >
+                  {status === "sending" ? "Envoi…" : "S'inscrire →"}
                 </button>
               </form>
             )}
@@ -992,7 +1308,7 @@ function Footer() {
           </div>
           <div className="fcol">
             <h5>Statut</h5>
-            <div>Version brouillon — 10/08/2026</div>
+            <div>Version brouillon · 10/08/2026</div>
             <div>Dates, lieu et dotations à valider</div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import * as React from "react";
 import { useEffect, useRef } from "react";
 
 /**
- * Firework Cursor — a GPGPU particle field that trails the pointer, drifting on
+ * Firework Cursor: a GPGPU particle field that trails the pointer, drifting on
  * curl noise and blooming. The simulation itself comes from the `threejs-components`
  * package's particles1 cursor module; this component wraps it for plain React.
  *
@@ -54,13 +54,13 @@ const DEFAULTS = {
 };
 
 // gpgpuSize is the edge of a square simulation texture, so the real cost of a
-// particle count is its square root — the library allocates one texel per
+// particle count is its square root: the library allocates one texel per
 // particle per attribute.
 const particlesFor = (density: number) => Math.max(10, Math.min(100, density)) * 1000;
 
 const DEFAULT_COLORS = ["#00FF00", "#0000FF"];
 
-// Fixed now that their controls are gone — the numbers the sliders produced at
+// Fixed now that their controls are gone: the numbers the sliders produced at
 // their defaults. The noise trio and the two extra bloom dials interacted in
 // ways that were hard to predict from the panel, and every combination that
 // read well sat near these values anyway.
@@ -75,7 +75,7 @@ const BLOOM_RADIUS = 0;
 const BLOOM_THRESHOLD = 0;
 
 // The library's own idle behaviour: with `pointer.hover` false it abandons the
-// cursor and drives the field around a Lissajous orbit centred on the screen —
+// cursor and drives the field around a Lissajous orbit centred on the screen:
 // that is both the "starts in the middle" and the "keeps moving once the
 // pointer is gone". Neither is configurable, so `hover` is pinned true and the
 // field is parked wherever the pointer was last seen instead.
@@ -121,7 +121,7 @@ function OriginkitBaseFireworkCursor(props: FireworkCursorProps) {
   const labelFont = { ...DEFAULT_LABEL_FONT, ...labelFontProp };
 
   // The field is snapped onto the pointer rather than eased onto it whenever
-  // it appears — on first sight and on every re-entry — so it never streaks
+  // it appears (on first sight and on every re-entry) so it never streaks
   // in from wherever it happened to be.
   const snapRef = useRef(true);
 
@@ -230,7 +230,7 @@ function OriginkitBaseFireworkCursor(props: FireworkCursorProps) {
       appRef.current = app;
 
       // The library keeps its pointer object private, but hands it to
-      // `particles.update({time, pointer})` every frame — which is
+      // `particles.update({time, pointer})` every frame, which is
       // reachable. Wrapping that call is the only way in from out here.
       const particles = app?.particles;
       const baseUpdate = particles?.update;
@@ -246,7 +246,7 @@ function OriginkitBaseFireworkCursor(props: FireworkCursorProps) {
             pointer.hover = KEEP_AWAKE;
             // The library measures the pointer against the window.
             // This component owns one frame, so its own
-            // measurement — taken against that frame — replaces
+            // measurement (taken against that frame) replaces
             // it. While the pointer is outside, the last position
             // is left in place and the field settles there instead
             // of chasing it across the page.
@@ -305,7 +305,7 @@ function OriginkitBaseFireworkCursor(props: FireworkCursorProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [color, colorsKey, size, lifetime, bloomStrength]);
 
-  // Sits in the component's own frame, centred — the cue to hover.
+  // Sits in the component's own frame, centred: the cue to hover.
   const labelNode = label ? (
     <div
       style={{
@@ -351,7 +351,7 @@ function OriginkitBaseFireworkCursor(props: FireworkCursorProps) {
           display: "block",
           opacity: 0,
           // The field cannot be stopped from out here, so it is
-          // faded rather than cut — an instant hide on a
+          // faded rather than cut: an instant hide on a
           // still-drifting simulation reads as a glitch.
           transition: "opacity 180ms linear",
           pointerEvents: "none",

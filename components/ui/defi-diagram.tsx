@@ -98,7 +98,7 @@ export function DefiDiagram({ steps, model }: { steps: Step[]; model: ReactNode 
     const mm = gsap.matchMedia();
     mm.add("(min-width: 1024px)", () => {
       // GpuModelViewer loads its custom element lazily (dynamic import), so
-      // the <model-viewer> tag may not exist yet at setup time — query it
+      // the <model-viewer> tag may not exist yet at setup time, so query it
       // fresh on every callback instead of caching a possibly-null reference.
       const getModel = () => modelWrap.querySelector("model-viewer") as ModelViewerLike | null;
 

@@ -267,6 +267,23 @@
   .globe-intro-overlay .scroll-hint{position:static;transform:none;margin-top:28px;opacity:0;transition:opacity .6s var(--ease) .2s;}
   .globe-intro-overlay .scroll-hint.in{opacity:1;}
 
+  /* Commande son de l'intro : elle apparaît avec la légende et s'efface avec le
+     son, pendant que le Bénin part vers le Hero. */
+  .globe-sound{
+    position:absolute;right:24px;bottom:26px;z-index:4;
+    display:flex;align-items:center;justify-content:center;
+    width:40px;height:40px;border-radius:50%;
+    background:rgba(13,13,16,.6);border:1px solid rgba(255,255,255,.18);
+    backdrop-filter:blur(6px);color:rgba(247,247,249,.78);
+    opacity:0;pointer-events:none;
+    transition:opacity .6s var(--ease),color .25s,border-color .25s,background .25s;
+  }
+  .globe-sound.in{opacity:1;pointer-events:auto;}
+  .globe-sound.out{opacity:0;pointer-events:none;}
+  .globe-sound:hover{color:#fff;border-color:rgba(255,181,155,.5);background:rgba(13,13,16,.82);}
+  .globe-sound svg{display:block;}
+  @media(max-width:640px){.globe-sound{right:16px;bottom:18px;width:36px;height:36px;}}
+
   /* AFRIQUE → BÉNIN : révélé au scroll par la timeline de globe-intro.tsx */
   /* La scène est épinglée sous la barre de nav : son bas dépasse donc le bas
      du viewport de la hauteur de cette barre. padding-bottom la compense, sinon
@@ -806,6 +823,115 @@
   header.nav .theme-toggle:hover{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.4);}
   header.nav.nav-light .theme-toggle{border-color:var(--line-strong);color:var(--ink-soft);}
   header.nav.nav-light .theme-toggle:hover{background:var(--cream-2);color:var(--ink);border-color:var(--ink);}
+
+  /* =========================================================================
+     SPONSORS : bandeau en défilement infini
+     Deux animations se superposent : la piste glisse (marqueeDrift) pendant
+     que chaque carte fait respirer ses quatre rayons de bordure séparément
+     (sponsorMorph). Le décalage de phase vient d'un animation-delay négatif
+     posé par le composant, d'où l'aspect « chaque carte a sa propre forme ».
+     ========================================================================= */
+  .sponsors-band{
+    padding:60px 0 64px;overflow:hidden;
+    background:var(--white);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .sponsors-head{max-width:720px;margin:0 auto;text-align:center;}
+  .sponsors-head h2{font-size:clamp(26px,3.4vw,40px);}
+  .sponsors-head .lead{margin:0 auto;}
+  .sponsors-cta{display:flex;justify-content:center;}
+
+  .sponsor-marquee{margin:34px 0 26px;}
+  .sponsor-marquee-label{
+    text-align:center;font-family:var(--font-mono);
+    font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--ink-soft);font-weight:700;margin-bottom:20px;
+  }
+  /* Le bandeau file d'un bord de l'écran à l'autre : il vit donc en dehors de
+     .wrap, et un masque dégradé fait entrer/sortir les cartes en fondu plutôt
+     que de les couper net. */
+  .sponsor-marquee-viewport{
+    position:relative;width:100%;overflow:hidden;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);
+    mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);
+  }
+  .sponsor-track{
+    display:flex;width:max-content;
+    animation-name:marqueeDrift;animation-timing-function:linear;animation-iteration-count:infinite;
+  }
+  /* La piste contient la liste deux fois : translater de -50 % de SA largeur
+     ramène exactement sur la copie, donc la boucle ne se voit pas. */
+  @keyframes marqueeDrift{from{transform:translate3d(0,0,0);}to{transform:translate3d(-50%,0,0);}}
+  .sponsor-marquee-viewport:hover .sponsor-track,
+  .sponsor-marquee-viewport:focus-within .sponsor-track{animation-play-state:paused;}
+  .sponsor-list{display:flex;list-style:none;}
+
+  /* Cartes resserrées : à 132×318 elles pesaient plus lourd que les vrais
+     logos qu'elles finiront par porter, et il n'en tenait que quatre à
+     l'écran. À 78×178 le bandeau montre une rangée, pas une file de pavés,
+     et le wordmark n'est plus perdu au milieu d'une réserve de vide. */
+  .sponsor-card{
+    --sponsor-h:78px;
+    flex:0 0 auto;width:clamp(142px,12vw,178px);height:var(--sponsor-h);margin-right:10px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:0 14px;text-align:center;overflow:hidden;position:relative;
+    background:var(--cream-2);border:1px solid var(--line);
+    animation:sponsorMorph 11s var(--ease) infinite;
+    transition:background .3s var(--ease),border-color .3s var(--ease),box-shadow .3s var(--ease),transform .3s var(--ease);
+  }
+  /* Les rayons plafonnent à la moitié de la hauteur (39px pour 78) : au
+     maximum le côté devient un demi-cercle parfait, jamais une forme molle. */
+  @keyframes sponsorMorph{
+    0%,100%{border-radius:39px 17px 17px 39px;}
+    20%{border-radius:39px 39px 19px 19px;}
+    40%{border-radius:19px 39px 39px 19px;}
+    60%{border-radius:17px 17px 39px 39px;}
+    80%{border-radius:39px 19px 39px 19px;}
+  }
+  .sponsor-card:hover{
+    border-color:var(--line-strong);box-shadow:var(--shadow-md);transform:translateY(-2px);
+  }
+  /* Le calque DÉBORDE de la carte : l'inset négatif est posé par le composant,
+     pour que le bord des rectangles pleine page (redurci par le seuil alpha du
+     filtre goo) tombe hors champ. Pas d'overflow ni de border-radius ici donc :
+     c'est l'overflow:hidden + le border-radius animé de .sponsor-card qui
+     redécoupent le calque, et c'est justement ce qui fait que la morsure épouse
+     le morph au lieu d'une forme figée. */
+  .liquid-blob-layer{
+    position:absolute;z-index:0;pointer-events:none;
+  }
+  /* Le contenu doit rester au-dessus de la goutte. */
+  .sponsor-wordmark,.sponsor-note,.sponsor-logo{position:relative;z-index:1;}
+  .sponsor-card-link{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    width:100%;height:100%;
+  }
+  .sponsor-wordmark{
+    font-size:clamp(11.5px,.92vw,13px);font-weight:700;letter-spacing:-.015em;line-height:1.2;
+    color:var(--ink);opacity:.74;transition:opacity .3s;
+  }
+  .sponsor-card:hover .sponsor-wordmark{opacity:1;}
+  .sponsor-note{
+    font-family:var(--font-mono);
+    font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+    color:var(--ink-soft);opacity:.62;
+  }
+  /* Logos en niveaux de gris au repos : une rangée de marques multicolores
+     mangerait la hiérarchie de la page. La couleur revient au survol. */
+  .sponsor-logo{
+    max-width:82%;max-height:28px;width:auto;height:auto;object-fit:contain;
+    filter:grayscale(1);opacity:.72;transition:filter .3s,opacity .3s;
+  }
+  .sponsor-card:hover .sponsor-logo{filter:none;opacity:1;}
+  @media(max-width:560px){
+    .sponsor-card{--sponsor-h:68px;width:clamp(126px,40vw,150px);margin-right:8px;padding:0 12px;}
+    @keyframes sponsorMorph{
+      0%,100%{border-radius:34px 15px 15px 34px;}
+      20%{border-radius:34px 34px 17px 17px;}
+      40%{border-radius:17px 34px 34px 17px;}
+      60%{border-radius:15px 15px 34px 34px;}
+      80%{border-radius:34px 17px 34px 17px;}
+    }
+  }
 
   /* =========================================================================
      RECHERCHE HERO : une seule entrée pour les équipes et les participants

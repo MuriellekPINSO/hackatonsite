@@ -27,7 +27,9 @@ import { TamebiLogo } from "@/components/ui/tamebi-logo";
 import InteractiveLines from "@/components/ui/interactive-lines";
 import FireworkCursor from "@/components/ui/firework-cursor";
 import LiquidCarveButton from "@/components/ui/liquid-carve-button";
-import SponsorMarquee, { type Sponsor } from "@/components/ui/sponsor-marquee";
+import SponsorGrid, { type Sponsor } from "@/components/ui/sponsor-grid";
+import GlowBorder from "@/components/ui/glow-border";
+import AsciiImage from "@/components/ui/ascii-image";
 import Scoreboard from "@/components/ui/scoreboard";
 import CompetitionSearch from "@/components/ui/competition-search";
 import { type RankedTeam } from "@/lib/competition";
@@ -604,19 +606,21 @@ function Sponsors() {
     <section className="sponsors-band">
       <div className="wrap">
         <div className="sponsors-head reveal">
+          <span className="kicker">Partenaires</span>
           <h2>Ils rendent le Tamebi Challenge possible</h2>
           <p className="lead">
             Le challenge est financé sur fonds Tamebi et porté par un cercle de partenaires qui
             apportent du calcul, des lieux, des relais et des prix.
           </p>
         </div>
-      </div>
-      <SponsorMarquee label="Avec le soutien de" sponsors={SPONSORS} />
-      <div className="wrap">
+        <SponsorGrid label="Avec le soutien de" sponsors={SPONSORS} />
         <div className="sponsors-cta reveal">
           <a href="#partenaires" className="btn btn-light" onClick={(e) => scrollToHash(e, "#partenaires")}>
             Devenir sponsor →
           </a>
+          <p className="sponsors-cta-note">
+            Trois formules, cumulables. Le dossier complet part par mail sur simple demande.
+          </p>
         </div>
       </div>
     </section>
@@ -738,8 +742,20 @@ function Partenaires() {
     [Bullhorn, "Amplifier la portée de l'événement", "Couverture éditoriale, relais sur vos canaux, présence lors des démonstrations finales."],
     [Handshake, "Accéder à un vivier de talents", "Rencontrez en conditions réelles les meilleurs profils IA/dev du pays, avant même la remise des prix."],
   ];
-  const tiers = [
+  // `featured` ne marque pas un « meilleur » palier : les trois formules ne
+  // sont pas des offres commerciales concurrentes. Il pointe celle dont
+  // l'événement a réellement besoin en premier (le calcul), pour que l'œil s'y
+  // pose avant les deux autres.
+  const tiers: {
+    icon: IconComponent;
+    tag: string;
+    title: string;
+    text: string;
+    perks: string[];
+    featured?: boolean;
+  }[] = [
     {
+      icon: Cloud,
       tag: "Infrastructure",
       title: "Partenaire GPU / Cloud",
       text: "Vous fournissez ou complétez la capacité de calcul du hackathon.",
@@ -748,8 +764,10 @@ function Partenaires() {
         "Présence sur site pendant les 30h de l'événement",
         "Accès à l'ensemble des projets développés sur votre infra",
       ],
+      featured: true,
     },
     {
+      icon: GraduationCap,
       tag: "Institutionnel",
       title: "Partenaire Institutionnel",
       text: "Universités, incubateurs, structures publiques du numérique.",
@@ -760,6 +778,7 @@ function Partenaires() {
       ],
     },
     {
+      icon: Bullhorn,
       tag: "Visibilité",
       title: "Partenaire Média & Communauté",
       text: "Vous amplifiez la portée du Tamebi Challenge auprès de votre audience.",
@@ -807,13 +826,37 @@ function Partenaires() {
           </div>
         </div>
 
-        <h3 className="reveal" style={{ fontSize: "22px", marginBottom: "28px" }}>
-          Formules de partenariat
-        </h3>
+        <div className="tier-head reveal">
+          <h3>Formules de partenariat</h3>
+          <p>
+            Elles se cumulent : une même structure peut apporter du calcul et relayer l'événement.
+          </p>
+        </div>
         <div className="grid3 reveal-stagger">
-          {tiers.map((t) => (
-            <div className="tier-card" key={t.tag}>
-              <span className="tier-tag">{t.tag}</span>
+          {tiers.map((t, i) => (
+            <div className={t.featured ? "tier-card is-featured" : "tier-card"} key={t.tag}>
+              {/* Filet lumineux sur la seule formule mise en avant : le même
+                  composant que le leader du classement, donc le même signal
+                  visuel d'un bout à l'autre de la page. */}
+              {t.featured && (
+                <GlowBorder
+                  glowColor="#8fd4d2"
+                  tailColor="rgba(68,173,171,.45)"
+                  baseColor="rgba(68,173,171,.08)"
+                  speed={26}
+                  radius={14}
+                  borderWidth={1.5}
+                />
+              )}
+              <div className="tier-top">
+                <span className="tier-icon">
+                  <t.icon size={18} />
+                </span>
+                <span className="tier-tag">{t.tag}</span>
+                {/* Repère de formule, comme sur la fiche d'éligibilité : trois
+                    cartes côte à côte se citent plus facilement numérotées. */}
+                <span className="tier-id">{String(i + 1).padStart(2, "0")}</span>
+              </div>
               <h3>{t.title}</h3>
               <p>{t.text}</p>
               <ul className="check-list">
@@ -821,6 +864,17 @@ function Partenaires() {
                   <li key={p}>{p}</li>
                 ))}
               </ul>
+              {/* Un point d'entrée par formule, avec l'objet déjà rempli : le
+                  visiteur n'a pas à redescendre chercher le bouton commun, et
+                  la demande arrive déjà qualifiée côté Tamebi. */}
+              <a
+                className="tier-link"
+                href={`mailto:partenaires@tamebi.ai?subject=${encodeURIComponent(
+                  `${t.title} — Tamebi Challenge 2026`
+                )}`}
+              >
+                En discuter <span aria-hidden="true">→</span>
+              </a>
             </div>
           ))}
         </div>
@@ -842,10 +896,43 @@ function Partenaires() {
 }
 
 function Ressources() {
-  const items: [IconComponent, string, string, string][] = [
-    [Scroll, "Règlement", "Règlement officiel Tamebi Challenge 2026", "Critères de notation, format des livrables, code de conduite. Publication à venir."],
-    [Palette, "Kit équipes", "Identité visuelle & templates", "Logos, bannières réseaux sociaux et template de pitch pour chaque équipe inscrite."],
-    [Handshake, "Partenaires", "Dossier de sponsoring", "Vous voulez soutenir le Tamebi Challenge ? Le dossier partenaires sera disponible prochainement."],
+  // `href` absent = document pas encore publié. La carte reste une carte, mais
+  // elle le DIT (badge d'état) au lieu de faire miroiter un lien mort : les
+  // trois pavés se ressemblaient, on ne savait pas lequel était cliquable.
+  const items: {
+    icon: IconComponent;
+    tag: string;
+    title: string;
+    text: string;
+    status: string;
+    image: string;
+    href?: string;
+  }[] = [
+    {
+      icon: Scroll,
+      tag: "Règlement",
+      title: "Règlement officiel Tamebi Challenge 2026",
+      text: "Critères de notation, format des livrables, code de conduite.",
+      status: "Publication à venir",
+      image: "/res-reglement.jpg",
+    },
+    {
+      icon: Palette,
+      tag: "Kit équipes",
+      title: "Identité visuelle & templates",
+      text: "Logos, bannières réseaux sociaux et template de pitch, remis à chaque équipe inscrite.",
+      status: "À l'inscription",
+      image: "/res-kit.jpg",
+    },
+    {
+      icon: Handshake,
+      tag: "Partenaires",
+      title: "Dossier de sponsoring",
+      text: "Formules, contreparties et budget détaillé. Écrivez-nous, on vous l'envoie dès sa sortie.",
+      status: "Sur demande",
+      image: "/res-sponsoring.jpg",
+      href: "mailto:partenaires@tamebi.ai?subject=Dossier%20de%20sponsoring%20Tamebi%20Challenge%202026",
+    },
   ];
   return (
     <section id="ressources">
@@ -854,22 +941,45 @@ function Ressources() {
         <h2 className="reveal">Tout pour bien préparer votre équipe</h2>
         <p className="lead reveal" style={{ marginBottom: "40px" }}>
           Documents et supports mis à disposition avant et pendant l'événement.
+          <span className="lead-aside">↳ passez le curseur sur une vignette</span>
         </p>
         <div className="grid3 reveal-stagger">
-          {items.map(([Icon, tag, title, text], i) => (
-            <div className="res-card" key={tag}>
-              <div className={`ph ${["", "tone-b", "tone-c"][i]}`} style={{ aspectRatio: "16/10" }}>
-                <span className="glyph" aria-hidden="true">
-                  <Icon size={40} />
-                </span>
+          {items.map((item) => {
+            const inner = (
+              <>
+                <div className="res-media">
+                  {/* La photo est rendue en caractères ASCII et redevient une
+                      photo sous le curseur. C'est la seule illustration de la
+                      carte : elle n'est pas décorative, d'où le texte alternatif
+                      qui décrit la photo et non l'effet. */}
+                  <AsciiImage src={item.image} alt={item.title} pitch={3.4} revealSize={58} />
+                  <span className="res-glyph" aria-hidden="true">
+                    <item.icon size={22} />
+                  </span>
+                  <span className="res-status">{item.status}</span>
+                </div>
+                <div className="body">
+                  <span className="res-tag">{item.tag}</span>
+                  <h4>{item.title}</h4>
+                  <p>{item.text}</p>
+                  {item.href && (
+                    <span className="res-action">
+                      Demander le dossier <span aria-hidden="true">→</span>
+                    </span>
+                  )}
+                </div>
+              </>
+            );
+            return item.href ? (
+              <a className="res-card is-linked" key={item.tag} href={item.href}>
+                {inner}
+              </a>
+            ) : (
+              <div className="res-card" key={item.tag}>
+                {inner}
               </div>
-              <div className="body">
-                <span className="res-tag">{tag}</span>
-                <h4>{title}</h4>
-                <p>{text}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -877,46 +987,95 @@ function Ressources() {
 }
 
 function Eligibilite() {
+  // Fiche technique plutôt que trois paragraphes : le texte dit la règle, la
+  // liste clé/valeur la rend vérifiable d'un coup d'œil. « De 2 à 5 personnes »
+  // se lit plus vite en face de « taille » qu'au milieu d'une phrase.
+  const criteria: {
+    icon: IconComponent;
+    title: string;
+    text: string;
+    specs: [string, string][];
+  }[] = [
+    {
+      icon: User,
+      title: "Profil",
+      text: "Étudiants, développeurs, data scientists et makers basés au Bénin, avec des bases en développement logiciel et/ou en IA/ML.",
+      specs: [
+        ["base", "Bénin"],
+        ["socle", "dev et/ou IA/ML"],
+        ["âge", "aucun minimum"],
+      ],
+    },
+    {
+      icon: Users,
+      title: "Équipes",
+      text: "De 2 à 5 personnes par équipe. Les équipes mixtes (dev, design, produit) sont encouragées.",
+      specs: [
+        ["taille", `${MIN_MEMBERS} à ${MAX_MEMBERS} personnes`],
+        ["profils", "dev, design, produit"],
+        ["inscription", "par équipe"],
+      ],
+    },
+    {
+      icon: Laptop,
+      title: "Matériel",
+      text: "Chaque équipe apporte son propre ordinateur portable ; l'accès au cluster GPU est fourni par Tamebi pendant toute la durée de l'événement.",
+      specs: [
+        ["à apporter", "votre laptop"],
+        ["fourni", "cluster 8×H200"],
+        ["accès", "les 30 h"],
+      ],
+    },
+  ];
+
   return (
-    <section id="eligibilite">
+    <section id="eligibilite" className="blueprint">
       <div className="wrap">
         <span className="kicker">Qui peut participer</span>
         <h2 className="reveal">Conditions d'éligibilité</h2>
-        <div className="grid3 reveal-stagger" style={{ marginTop: "32px" }}>
-          <SpotlightCard className="card">
-            <h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="card-icon">
-                <User size={16} />
-              </span>{" "}
-              Profil
-            </h3>
-            <p>
-              Étudiants, développeurs, data scientists et makers basés au Bénin, avec des bases en
-              développement logiciel et/ou en IA/ML.
-            </p>
-          </SpotlightCard>
-          <SpotlightCard className="card">
-            <h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="card-icon">
-                <Users size={16} />
-              </span>{" "}
-              Équipes
-            </h3>
-            <p>De 2 à 5 personnes par équipe. Les équipes mixtes (dev, design, produit) sont encouragées.</p>
-          </SpotlightCard>
-          <SpotlightCard className="card">
-            <h3 style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="card-icon">
-                <Laptop size={16} />
-              </span>{" "}
-              Matériel
-            </h3>
-            <p>
-              Chaque équipe apporte son propre ordinateur portable ; l'accès au cluster GPU est
-              fourni par Tamebi pendant toute la durée de l'événement.
-            </p>
-          </SpotlightCard>
+        <p className="lead reveal">
+          Trois conditions, pas une de plus. Si vous les cochez toutes les trois, votre équipe peut
+          s'inscrire dès l'ouverture des candidatures.
+        </p>
+        <div className="grid3 reveal-stagger spec-sheet">
+          {criteria.map((c, i) => (
+            <SpotlightCard className="card spec-card" key={c.title}>
+              <div className="spec-head">
+                <span className="spec-id">{String(i + 1).padStart(2, "0")}</span>
+                <span className="card-icon">
+                  <c.icon size={16} />
+                </span>
+                <h3>{c.title}</h3>
+              </div>
+              <p>{c.text}</p>
+              <dl className="spec-list">
+                {c.specs.map(([key, value]) => (
+                  <div className="spec-row" key={key}>
+                    {/* Le trait de conduite vit DANS le <dt> : un élément
+                        intercalaire entre <dt> et <dd> serait du HTML invalide
+                        dans une liste de définitions. */}
+                    <dt>
+                      <span>{key}</span>
+                      <span className="spec-fill" aria-hidden="true" />
+                    </dt>
+                    <dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </SpotlightCard>
+          ))}
         </div>
+        <p className="elig-foot reveal">
+          Un doute sur votre cas ?{" "}
+          <a href="#faq" onClick={(e) => scrollToHash(e, "#faq")}>
+            La FAQ répond aux questions les plus fréquentes
+          </a>
+          , et le reste part à{" "}
+          <a href="mailto:challenge@tamebi.ai?subject=Question%20d%27%C3%A9ligibilit%C3%A9%20Tamebi%20Challenge%202026">
+            challenge@tamebi.ai
+          </a>
+          .
+        </p>
       </div>
     </section>
   );

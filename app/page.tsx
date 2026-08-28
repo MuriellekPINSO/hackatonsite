@@ -27,7 +27,6 @@ import { TamebiLogo } from "@/components/ui/tamebi-logo";
 import InteractiveLines from "@/components/ui/interactive-lines";
 import FireworkCursor from "@/components/ui/firework-cursor";
 import LiquidCarveButton from "@/components/ui/liquid-carve-button";
-import SponsorGrid, { type Sponsor } from "@/components/ui/sponsor-grid";
 import GlowBorder from "@/components/ui/glow-border";
 import AsciiImage from "@/components/ui/ascii-image";
 import Scoreboard from "@/components/ui/scoreboard";
@@ -239,7 +238,6 @@ export default function Page() {
         onSelectTeam={(teamId) => setFocus((f) => ({ teamId, nonce: f.nonce + 1 }))}
       />
       <Intro />
-      <Sponsors />
       <Defi />
       <Programme />
       <Prix />
@@ -584,46 +582,6 @@ function Stamp() {
         </p>
       </div>
     </div>
-  );
-}
-
-// ⚠️ PLACEHOLDERS de développement : à remplacer par les vrais sponsors (et
-// leurs logos dans /public) avant la mise en ligne. `logo` est facultatif :
-// sans fichier, la carte affiche proprement le nom en wordmark.
-const SPONSORS: Sponsor[] = [
-  { name: "Sponsor GPU", note: "Calcul" },
-  { name: "Cloud Partner", note: "Infrastructure" },
-  { name: "Université partenaire", note: "Académique" },
-  { name: "Incubateur", note: "Écosystème" },
-  { name: "Opérateur télécom", note: "Connectivité" },
-  { name: "Média tech", note: "Visibilité" },
-  { name: "Fonds d'amorçage", note: "Prix" },
-  { name: "Communauté dev", note: "Mobilisation" },
-];
-
-function Sponsors() {
-  return (
-    <section className="sponsors-band">
-      <div className="wrap">
-        <div className="sponsors-head reveal">
-          <span className="kicker">Partenaires</span>
-          <h2>Ils rendent le Tamebi Challenge possible</h2>
-          <p className="lead">
-            Le challenge est financé sur fonds Tamebi et porté par un cercle de partenaires qui
-            apportent du calcul, des lieux, des relais et des prix.
-          </p>
-        </div>
-        <SponsorGrid label="Avec le soutien de" sponsors={SPONSORS} />
-        <div className="sponsors-cta reveal">
-          <a href="#partenaires" className="btn btn-light" onClick={(e) => scrollToHash(e, "#partenaires")}>
-            Devenir sponsor →
-          </a>
-          <p className="sponsors-cta-note">
-            Trois formules, cumulables. Le dossier complet part par mail sur simple demande.
-          </p>
-        </div>
-      </div>
-    </section>
   );
 }
 

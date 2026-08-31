@@ -122,9 +122,14 @@ export default function EspaceLogin() {
                 son équipe s'est inscrite avec une autre. */}
             <p className="dash-auth-sub" style={{ fontSize: 12.5, marginTop: 16 }}>
               Seules les adresses déclarées à l&apos;inscription sont acceptées. Une erreur ?{" "}
-              <Link href="/#contact" style={{ color: "var(--teal-text)", textDecoration: "underline", textUnderlineOffset: 3 }}>
+              {/* Il n'y a pas de section « contact » sur la landing : l'adresse
+                  de l'organisation est le seul point de contact réel. */}
+              <a
+                href="mailto:challenge@tamebi.ai?subject=Acc%C3%A8s%20aux%20espaces%20Tamebi%20Challenge%202026"
+                style={{ color: "var(--teal-text)", textDecoration: "underline", textUnderlineOffset: 3 }}
+              >
                 écrivez à l&apos;organisation
-              </Link>
+              </a>
               .
             </p>
 

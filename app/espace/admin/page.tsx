@@ -169,10 +169,20 @@ export default function AdminEspace() {
           num="03"
           title="Tête de classement"
           sub={`Somme des quatre critères, ${MAX_SCORE} points au total.`}
+          // L'ancre est #scoreboard, celle que la nav publique utilise déjà :
+          // #classement n'a jamais existé. Nouvel onglet, parce qu'un
+          // organisateur en plein événement ne doit pas perdre son tableau de
+          // bord pour aller regarder la page publique.
           aside={
-            <Link href="/#classement" className="dash-btn is-sm">
-              Classement complet
-            </Link>
+            <a
+              href="/#scoreboard"
+              target="_blank"
+              rel="noopener"
+              className="dash-btn is-sm"
+            >
+              Ouvrir le scoreboard
+              <Export size={13} />
+            </a>
           }
         />
         <div className="dash-grid dash-grid-3">

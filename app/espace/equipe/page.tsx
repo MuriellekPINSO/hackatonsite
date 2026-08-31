@@ -19,7 +19,7 @@ import Trophy from "reicon-react/icons/Trophy";
 import Lifebuoy from "reicon-react/icons/Lifebuoy";
 import People from "reicon-react/icons/People";
 import Notification from "reicon-react/icons/Notification";
-import { CRITERIA, MAX_SCORE, initials } from "@/lib/competition";
+import { CRITERIA, MAX_SCORE, initials, type Member } from "@/lib/competition";
 import {
   ANNOUNCEMENTS,
   HELP_REQUESTS,
@@ -39,6 +39,29 @@ export default function EquipeEspace() {
   const team = teamById(MY_TEAM_ID)!;
   const myRequests = HELP_REQUESTS.filter((r) => r.teamId === MY_TEAM_ID);
   const [askOpen, setAskOpen] = useState(false);
+  const [members, setMembers] = useState<Member[]>(team.members);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newRole, setNewRole] = useState("");
+
+  // Le bouton vit dans l'en-tête, en haut de page, mais le formulaire qu'il
+  // révèle est dans la section « Aide » plus bas : sans ce scroll, ouvrir le
+  // formulaire ne change rien à l'écran visible et donne l'impression que le
+  // bouton ne fait rien.
+  function openAsk() {
+    setAskOpen(true);
+    document.getElementById("aide")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function addMember() {
+    const name = newName.trim();
+    if (!name) return;
+    setMembers((prev) => [...prev, { name, role: newRole.trim() || "Membre" }]);
+    setNewName("");
+    setNewRole("");
+    setAddMemberOpen(false);
+    toast.success("Membre ajouté", { description: `${name} fait maintenant partie de l'équipe.` });
+  }
 
   const done = MY_DELIVERABLES.filter((d) => d.done).length;
   const missing = MY_DELIVERABLES.filter((d) => !d.done);
@@ -66,7 +89,7 @@ export default function EquipeEspace() {
             {team.tagline} · {team.city}
           </p>
         </div>
-        <button type="button" className="dash-btn is-accent" onClick={() => setAskOpen((v) => !v)}>
+        <button type="button" className="dash-btn is-accent" onClick={openAsk}>
           <Lifebuoy size={15} />
           Demander de l&apos;aide
         </button>
@@ -297,9 +320,61 @@ export default function EquipeEspace() {
 
       {/* ----------------------------------------------------- 04 MEMBRES */}
       <section id="membres" className="dash-section">
-        <SectionHead num="04" title="Membres" />
+        <SectionHead
+          num="04"
+          title="Membres"
+          sub={members.length >= 5 ? "Équipe au complet (5 personnes max)." : undefined}
+          aside={
+            members.length < 5 ? (
+              <button type="button" className="dash-btn is-sm" onClick={() => setAddMemberOpen((v) => !v)}>
+                <People size={15} />
+                Ajouter un membre
+              </button>
+            ) : undefined
+          }
+        />
+
+        {addMemberOpen && (
+          <div className="dash-card" style={{ marginBottom: 16 }}>
+            <div className="dash-grid dash-grid-2" style={{ marginBottom: 14 }}>
+              <div className="dash-field">
+                <label className="dash-label" htmlFor="member-name">
+                  Nom
+                </label>
+                <input
+                  id="member-name"
+                  className="dash-input"
+                  placeholder="Prénom Nom"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+              <div className="dash-field">
+                <label className="dash-label" htmlFor="member-role">
+                  Rôle
+                </label>
+                <input
+                  id="member-role"
+                  className="dash-input"
+                  placeholder="Backend / API, Frontend, Data…"
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                />
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button type="button" className="dash-btn is-ghost is-sm" onClick={() => setAddMemberOpen(false)}>
+                Annuler
+              </button>
+              <button type="button" className="dash-btn is-primary is-sm" onClick={addMember} disabled={!newName.trim()}>
+                Ajouter
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="dash-grid dash-grid-4">
-          {team.members.map((m) => (
+          {members.map((m) => (
             <div className="dash-card" key={m.name}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <Avatar label={initials(m.name)} solid />

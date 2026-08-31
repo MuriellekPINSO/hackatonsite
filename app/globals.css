@@ -1296,17 +1296,6 @@
     white-space:nowrap;
   }
 
-  /* Identité de la personne connectée. Sur un événement où les quatre rôles se
-     croisent dans la même salle, savoir « en tant que qui » on regarde l'écran
-     évite la moitié des malentendus. */
-  .dash-who{display:flex;align-items:center;gap:11px;padding:11px 10px;background:var(--cream-2);border:1px solid var(--line);border-radius:var(--radius-sm);}
-  .dash-who-avatar{
-    flex-shrink:0;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-    font-size:11px;font-weight:800;letter-spacing:.02em;background:var(--green);color:var(--fixed-light);
-  }
-  .dash-who-name{font-size:13px;font-weight:700;line-height:1.3;}
-  .dash-who-role{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--teal-text);margin-top:2px;}
-
   .dash-nav{display:flex;flex-direction:column;gap:2px;}
   .dash-nav-title{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);padding:0 10px;margin-bottom:8px;}
   .dash-nav-item{
@@ -1327,19 +1316,17 @@
   }
   .dash-nav-count.is-hot{background:rgba(196,85,60,.14);color:var(--bad-text);}
 
-  /* Bascule de rôle. Présente uniquement tant que l'authentification n'est pas
-     branchée : elle permet de parcourir les quatre espaces d'un clic pour les
-     valider. À retirer le jour où le rôle vient de la session. */
-  .dash-switcher{margin-top:auto;padding-top:18px;border-top:1px dashed var(--line-strong);}
-  .dash-switcher-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);padding:0 10px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-  .dash-switcher-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-  .dash-switcher-btn{
-    padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--white);
-    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
-    color:var(--ink-soft);cursor:pointer;transition:border-color .18s,color .18s,background .18s;
+  /* Déconnexion, en pied de rail. `margin-top:auto` la colle en bas quelle que
+     soit la longueur du sommaire, et le filet en pointillés la sépare des
+     sections : ce n'est pas une destination de plus dans la page. */
+  .dash-signout{
+    margin-top:auto;display:flex;align-items:center;gap:11px;
+    padding:10px;border-radius:var(--radius-sm);
+    font-size:13.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+    border-top:1px dashed var(--line-strong);border-radius:0;padding-top:16px;margin-bottom:2px;
+    transition:color .18s var(--ease);
   }
-  .dash-switcher-btn:hover{border-color:var(--line-strong);color:var(--ink);}
-  .dash-switcher-btn[data-active="true"]{background:var(--green);border-color:var(--green);color:var(--fixed-light);}
+  .dash-signout:hover{color:#c4553c;}
 
   /* --- ZONE PRINCIPALE ----------------------------------------- */
   .dash-main{min-width:0;display:flex;flex-direction:column;}
@@ -1370,6 +1357,34 @@
     transition:background .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease);
   }
   .dash-icon-btn:hover{background:var(--cream-2);border-color:var(--line);color:var(--ink);}
+
+  /* Pastille de compte, à droite de la topbar. Ronde et pas carrée comme les
+     avatars des listes : c'est un bouton de compte, pas une vignette de
+     personne parmi d'autres, et la forme suffit à faire la différence. */
+  .dash-account{
+    display:inline-flex;align-items:center;gap:5px;flex-shrink:0;padding:2px;
+    border:none;background:none;cursor:pointer;border-radius:var(--radius-pill);
+    transition:opacity .18s var(--ease);
+  }
+  .dash-account:hover{opacity:.82;}
+  .dash-account-avatar{
+    display:flex;align-items:center;justify-content:center;width:32px;height:32px;
+    border-radius:50%;background:var(--teal-deep);color:#fff;
+    font-size:11.5px;font-weight:800;letter-spacing:.01em;
+  }
+  .dash-account-chevron{color:var(--ink-soft);}
+  .dash-account[data-state="open"] .dash-account-chevron{transform:rotate(180deg);}
+
+  /* En-tête du menu : qui vous êtes, et surtout SOUS QUELLE ADRESSE. Sur un
+     événement où la même personne peut être jurée le matin et mentore le soir,
+     « connecté en tant que » n'est pas une politesse. */
+  .dash-menu-head{padding:10px 8px 8px;}
+  .dash-menu-name{font-size:13.5px;font-weight:700;line-height:1.3;}
+  .dash-menu-mail{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-soft);margin-top:3px;word-break:break-all;}
+  .dash-menu-role{
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    font-weight:700;color:var(--teal-text);margin-top:6px;
+  }
   /* Horloge de l'événement. Sur un format de 30 h, « il reste 17 h 42 » est
      l'information qui conditionne toutes les décisions de la journée : elle
      est donc en haut de chaque écran, pour tous les rôles. */
@@ -1621,13 +1636,13 @@
   @media(max-width:1080px){
     .dash-shell{grid-template-columns:1fr;}
     .dash-rail{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;overflow-x:auto;padding:12px 16px;border-right:none;border-bottom:1px solid var(--line);}
-    .dash-rail-brand,.dash-who,.dash-nav-title{display:none;}
+    .dash-rail-brand,.dash-nav-title{display:none;}
     .dash-nav{flex-direction:row;gap:4px;}
     .dash-nav-item{white-space:nowrap;padding:8px 13px;}
     .dash-nav-item[data-active="true"]{box-shadow:inset 0 -2px 0 var(--teal);}
-    .dash-switcher{margin-top:0;margin-left:auto;padding-top:0;border-top:none;border-left:1px dashed var(--line-strong);padding-left:14px;}
-    .dash-switcher-label{display:none;}
-    .dash-switcher-grid{grid-template-columns:repeat(4,auto);}
+    /* En barre horizontale, la déconnexion revient à droite, après les
+       sections, et perd son filet du haut qui n'aurait plus de sens. */
+    .dash-signout{margin-top:0;margin-left:auto;border-top:none;padding-top:10px;white-space:nowrap;}
     .dash-split{grid-template-columns:1fr;}
     .dash-body{padding:18px 16px 40px;gap:28px;}
     .dash-topbar{padding:10px 16px;}
@@ -1644,12 +1659,43 @@
      formulaire à droite sur le cream habituel. */
   .dash-auth{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr;background:var(--cream);}
   .dash-auth-aside{
+    position:relative;overflow:hidden;isolation:isolate;
     background:var(--green);color:var(--fixed-light);
     padding:clamp(32px,4vw,56px);display:flex;flex-direction:column;justify-content:space-between;gap:40px;
   }
+  .dash-auth-bg{position:absolute;inset:0;z-index:0;}
+  /* Vignette légère : le fond animé ne doit jamais rivaliser avec le texte,
+     surtout en haut/bas de l'aside où le logo et les stats sont proches du bord. */
+  .dash-auth-aside::after{
+    content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(180deg, rgba(27,27,31,.5) 0%, transparent 22%, transparent 78%, rgba(27,27,31,.55) 100%);
+  }
+  .dash-auth-aside > *:not(.dash-auth-bg){position:relative;z-index:2;}
   .dash-auth-mark{height:26px;width:auto;display:block;}
   .dash-auth-claim{font-size:clamp(26px,2.9vw,38px);font-weight:800;letter-spacing:-.035em;line-height:1.12;max-width:15ch;}
   .dash-auth-brief{font-size:15px;color:rgba(247,247,249,.66);margin-top:16px;max-width:44ch;line-height:1.6;}
+  /* Bloc d'état, entre le manifeste et les chiffres. Il tient la hauteur que
+     le panneau laissait vide, avec de l'information vivante plutôt qu'un
+     écartement des autres blocs. */
+  .dash-auth-status{max-width:420px;}
+  .dash-auth-status-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;}
+  .dash-auth-live{
+    display:inline-flex;align-items:center;gap:7px;font-family:var(--font-mono);
+    font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;
+    color:var(--accent-on-dark);
+  }
+  .dash-auth-live-dot{
+    width:6px;height:6px;border-radius:50%;background:#3ec96b;
+    animation:sbLivePulse 1.9s ease-out infinite;
+  }
+  .dash-auth-track{height:6px;border-radius:var(--radius-pill);background:rgba(247,247,249,.14);overflow:hidden;}
+  .dash-auth-fill{height:100%;border-radius:inherit;background:var(--teal);}
+  .dash-auth-status-foot{
+    display:flex;justify-content:space-between;gap:16px;margin-top:11px;
+    font-family:var(--font-mono);font-size:11.5px;color:rgba(247,247,249,.6);
+  }
+  .dash-auth-status-foot b{color:var(--fixed-light);font-weight:700;}
+
   .dash-auth-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:22px 18px;}
   .dash-auth-fact-label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;color:rgba(247,247,249,.5);}
   .dash-auth-fact-value{font-size:19px;font-weight:800;letter-spacing:-.025em;margin-top:6px;font-variant-numeric:tabular-nums;}
@@ -1665,6 +1711,6 @@
     /* Le panneau sombre passe en bandeau court au-dessus du formulaire : sur
        mobile, ce qu'on veut voir en premier c'est le champ, pas le manifeste. */
     .dash-auth-aside{padding:22px 20px;flex-direction:row;align-items:center;justify-content:space-between;gap:18px;}
-    .dash-auth-claim,.dash-auth-brief,.dash-auth-facts{display:none;}
+    .dash-auth-claim,.dash-auth-brief,.dash-auth-facts,.dash-auth-status{display:none;}
     .dash-auth-panel{padding:36px 20px;}
   }

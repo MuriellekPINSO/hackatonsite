@@ -134,7 +134,11 @@ export const MY_JURY_ENTRIES: JuryEntry[] = [
   },
 ];
 
-export const JURY_ME = { name: "Danielle Kpinsô", role: "Jury technique" };
+export const JURY_ME = {
+  name: "Danielle Kpinsô",
+  role: "Jury technique",
+  email: "danielle.k@tamebi.ai",
+};
 
 /* ------------------------------------------------------------------ MENTOR */
 
@@ -215,14 +219,22 @@ export const KNOWN_BLOCKERS: { title: string; hint: string; hits: number }[] = [
   },
 ];
 
-export const MENTOR_ME = { name: "Yoann Ozohoun", role: "Mentor infra" };
+export const MENTOR_ME = {
+  name: "Yoann Ozohoun",
+  role: "Mentor infra",
+  email: "yoann.o@tamebi.ai",
+};
 
 /* ------------------------------------------------------------------ ÉQUIPE */
 
 /** Équipe du participant connecté. */
 export const MY_TEAM_ID = "sème-inference";
 
-export const PARTICIPANT_ME = { name: "Sèna Kpodar", role: "Frontend" };
+export const PARTICIPANT_ME = {
+  name: "Sèna Kpodar",
+  role: "Frontend",
+  email: "sena.kpodar@seme-inference.bj",
+};
 
 export type Deliverable = {
   key: string;
@@ -313,7 +325,11 @@ export const ACTIVITY: { time: string; text: string; tone?: "teal" | "amber" | "
   { time: "T+10:47", text: "**Cluster Cotonou** a déployé son service." },
 ];
 
-export const ORG_ME = { name: "Organisation", role: "Administration" };
+export const ORG_ME = {
+  name: "Organisation",
+  role: "Administration",
+  email: "challenge@tamebi.ai",
+};
 
 /* ------------------------------------------------------------------ HELPERS */
 

@@ -16,7 +16,9 @@ import Link from "next/link";
 import Send from "reicon-react/icons/Send";
 import TickCircle from "reicon-react/icons/TickCircle";
 import { MAX_SCORE, participantCount } from "@/lib/competition";
-import { EVENT, RANKED } from "@/lib/espaces-mock";
+import { EVENT, EVENT_PROGRESS, RANKED, remainingLabel } from "@/lib/espaces-mock";
+import RisingLines from "@/components/ui/rising-lines";
+import { TamebiLogo } from "@/components/ui/tamebi-logo";
 
 export default function EspaceLogin() {
   const [email, setEmail] = useState("");
@@ -25,13 +27,54 @@ export default function EspaceLogin() {
   return (
     <div className="dash-auth">
       <aside className="dash-auth-aside">
+        <RisingLines
+          className="dash-auth-bg"
+          style={{ position: "absolute", inset: 0, zIndex: 0 }}
+          color="#8fd4d2"
+          horizonColor="#44adab"
+          particles={260}
+          scale={5}
+          opacity={70}
+          riseSpeed={16}
+          horizonOpacity={55}
+        />
         <Link href="/" aria-label="Retour à la page publique">
-          <img src="/logov1.svg" alt="" className="dash-auth-mark" />
+          <TamebiLogo light className="dash-auth-mark" />
         </Link>
 
         <div>
           <h1 className="dash-auth-claim">Espaces de la compétition</h1>
           <p className="dash-auth-brief">{EVENT.brief}</p>
+        </div>
+
+        {/* État de l'événement, en direct.
+         *
+         *  Le panneau n'avait que trois blocs pour toute sa hauteur, donc un
+         *  trou au milieu. Plutôt que d'écarter les trois autres pour le
+         *  combler, on met là ce qu'on veut savoir juste avant de se
+         *  connecter : est-ce que ça tourne encore, et combien de temps
+         *  reste-t-il. Toutes ces valeurs existent déjà, aucune n'est
+         *  décorative. */}
+        <div className="dash-auth-status">
+          <div className="dash-auth-status-head">
+            <span className="dash-auth-fact-label">En ce moment</span>
+          </div>
+          <div
+            className="dash-auth-track"
+            role="progressbar"
+            aria-valuenow={EVENT_PROGRESS}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Événement écoulé à ${EVENT_PROGRESS} %`}
+          >
+            <div className="dash-auth-fill" style={{ width: `${EVENT_PROGRESS}%` }} />
+          </div>
+          <div className="dash-auth-status-foot">
+            <span>{EVENT_PROGRESS} % écoulés</span>
+            <span>
+              reste <b>{remainingLabel()}</b>
+            </span>
+          </div>
         </div>
 
         <div className="dash-auth-facts">

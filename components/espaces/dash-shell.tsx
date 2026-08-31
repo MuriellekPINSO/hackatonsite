@@ -13,6 +13,15 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { IconComponent } from "reicon-react/createIcon";
 import Search from "reicon-react/icons/Search";
 import Logout from "reicon-react/icons/Logout";
+import ProfileCircle from "reicon-react/icons/ProfileCircle";
+import AngleDown from "reicon-react/icons/AngleDown";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ThemeToggle from "@/components/ui/theme-toggle";
 import {
   CommandDialog,
@@ -168,13 +177,20 @@ export function DashShell({
   children,
 }: {
   role: RoleId;
-  who: { name: string; role: string };
+  who: { name: string; role: string; email: string };
   /** Nom de l'espace, premier segment du fil d'Ariane. Pour un participant
    *  c'est le nom de son équipe : c'est bien là qu'il se trouve. */
   title: string;
   sections: DashSection[];
   children: ReactNode;
 }) {
+  const initials = who.name
+    .split(/[\s'-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
+
   const active = useActiveSection(sections.map((s) => s.id));
   const activeSection = sections.find((s) => s.id === active);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -202,21 +218,6 @@ export function DashShell({
           <span className="dash-rail-event">Édition 2026</span>
         </div>
 
-        <div className="dash-who">
-          <span className="dash-who-avatar" aria-hidden="true">
-            {who.name
-              .split(/[\s'-]+/)
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((w) => w[0]!.toUpperCase())
-              .join("")}
-          </span>
-          <div>
-            <div className="dash-who-name">{who.name}</div>
-            <div className="dash-who-role">{who.role}</div>
-          </div>
-        </div>
-
         <nav className="dash-nav" aria-label="Sections de l'espace">
           <div className="dash-nav-title">Sections</div>
           {sections.map((s) => {
@@ -241,25 +242,14 @@ export function DashShell({
           })}
         </nav>
 
-        {/* Échafaudage de conception. L'authentification n'étant pas branchée,
-            c'est ce sélecteur qui permet de parcourir les quatre espaces pour
-            les valider. Il disparaît le jour où le rôle vient de la session. */}
-        <div className="dash-switcher">
-          <div className="dash-switcher-label">Voir en tant que</div>
-          <div className="dash-switcher-grid">
-            {ROLES.map((r) => (
-              <Link
-                key={r.id}
-                href={r.href}
-                title={r.title}
-                className="dash-switcher-btn"
-                data-active={role === r.id}
-              >
-                {r.label}
-              </Link>
-            ))}
-          </div>
-        </div>
+        {/* Sortie en pied de rail, séparée des sections par un filet : c'est la
+            seule action de la colonne qui ne navigue pas dans la page, elle ne
+            doit pas se confondre avec une entrée de sommaire. Elle double celle
+            du menu de compte, à dessein : on la cherche des deux côtés. */}
+        <Link href="/espace/login" className="dash-signout">
+          <Logout size={16} />
+          Déconnexion
+        </Link>
       </aside>
 
       <div className="dash-main">
@@ -314,12 +304,44 @@ export function DashShell({
             <span className="dash-topbar-sep" aria-hidden="true" />
 
             <ThemeToggle className="dash-icon-btn" />
-            {/* Sortie explicite. Sous 1080px le rail masque l'identité et les
-                actions de compte : sans ce bouton, on ne peut plus quitter
-                l'espace depuis un téléphone. */}
-            <Link href="/" className="dash-icon-btn" aria-label="Quitter l'espace" title="Quitter l'espace">
-              <Logout size={16} />
-            </Link>
+
+            {/* Compte. L'identité était dans le rail, sous le logo : elle
+                occupait une carte entière pour une information qu'on lit une
+                fois en arrivant, et elle disparaissait complètement dès que le
+                rail se repliait en mobile. En pastille ronde ici, elle tient en
+                32px, reste visible à toutes les tailles, et rassemble sous un
+                seul clic les actions de compte, déconnexion comprise. */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="dash-account" aria-label={`Compte de ${who.name}`}>
+                  <span className="dash-account-avatar" aria-hidden="true">
+                    {initials}
+                  </span>
+                  <AngleDown size={13} className="dash-account-chevron" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" sideOffset={8} className="w-64">
+                <div className="dash-menu-head">
+                  <div className="dash-menu-name">{who.name}</div>
+                  <div className="dash-menu-mail">{who.email}</div>
+                  <div className="dash-menu-role">{who.role}</div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/espace/equipe#membres">
+                    <ProfileCircle size={15} />
+                    Mon compte
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/espace/login">
+                    <Logout size={15} />
+                    Se déconnecter
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 

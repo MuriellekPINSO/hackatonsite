@@ -31,6 +31,7 @@ import SponsorMarquee, { type Sponsor } from "@/components/ui/sponsor-marquee";
 import GlowBorder from "@/components/ui/glow-border";
 import AsciiImage from "@/components/ui/ascii-image";
 import Scoreboard from "@/components/ui/scoreboard";
+import ThemeToggle from "@/components/ui/theme-toggle";
 import CompetitionSearch from "@/components/ui/competition-search";
 import { type RankedTeam } from "@/lib/competition";
 import { useCompetition } from "@/lib/use-competition";
@@ -269,40 +270,6 @@ export default function Page() {
       <Stamp />
       <Footer />
     </>
-  );
-}
-
-function ThemeToggle({ className, showLabel = false }: { className?: string; showLabel?: boolean }) {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  // Reads the theme the blocking init script (layout.tsx) already stamped on
-  // <html>. Deferred to an effect (rather than a lazy useState initializer)
-  // so the very first client render matches the server's; otherwise the
-  // sun/moon icon would mismatch and trigger a hydration warning.
-  useEffect(() => {
-    setTheme((document.documentElement.getAttribute("data-theme") as "light" | "dark") || "light");
-  }, []);
-
-  const toggle = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-    document.documentElement.classList.toggle("dark", next === "dark");
-    try {
-      localStorage.setItem("tamebi-theme", next);
-    } catch {}
-  };
-
-  return (
-    <button
-      type="button"
-      className={className ? `theme-toggle ${className}` : "theme-toggle"}
-      onClick={toggle}
-      aria-label={theme === "dark" ? "Passer au thème clair" : "Passer au thème sombre"}
-    >
-      {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-      {showLabel && <span>{theme === "dark" ? "Thème clair" : "Thème sombre"}</span>}
-    </button>
   );
 }
 

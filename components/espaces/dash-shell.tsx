@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import type { IconComponent } from "reicon-react/createIcon";
 import Search from "reicon-react/icons/Search";
+import Logout from "reicon-react/icons/Logout";
+import ThemeToggle from "@/components/ui/theme-toggle";
 import {
   CommandDialog,
   CommandEmpty,
@@ -167,12 +169,14 @@ export function DashShell({
 }: {
   role: RoleId;
   who: { name: string; role: string };
-  /** Titre affiché dans la topbar collante. */
+  /** Nom de l'espace, premier segment du fil d'Ariane. Pour un participant
+   *  c'est le nom de son équipe : c'est bien là qu'il se trouve. */
   title: string;
   sections: DashSection[];
   children: ReactNode;
 }) {
   const active = useActiveSection(sections.map((s) => s.id));
+  const activeSection = sections.find((s) => s.id === active);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   // ⌘K / Ctrl+K. On intercepte avant que le navigateur n'ouvre sa propre barre
@@ -195,11 +199,7 @@ export function DashShell({
           <Link href="/" aria-label="Retour à la page publique">
             <img src="/logov1.svg" alt="" className="dash-rail-mark" />
           </Link>
-          <span className="dash-rail-event">
-            Tamebi
-            <br />
-            Challenge 26
-          </span>
+          <span className="dash-rail-event">Édition 2026</span>
         </div>
 
         <div className="dash-who">
@@ -264,7 +264,22 @@ export function DashShell({
 
       <div className="dash-main">
         <header className="dash-topbar">
-          <span className="dash-topbar-title">{title}</span>
+          {/* Fil d'Ariane vivant. Il remplace un titre qui recopiait mot pour
+              mot le <h1> visible 40px plus bas : deux fois la même information,
+              dont une inutile. Le second segment suit la section à l'écran, ce
+              qui donne enfin un repère quand on a défilé loin dans la page. */}
+          <nav className="dash-crumb" aria-label="Fil d'Ariane">
+            <span className="dash-crumb-root">{title}</span>
+            {activeSection && (
+              <>
+                <span className="dash-crumb-sep" aria-hidden="true">
+                  /
+                </span>
+                <span className="dash-crumb-current">{activeSection.label}</span>
+              </>
+            )}
+          </nav>
+
           {/* Le raccourci est affiché plutôt que caché : personne ne devine
               ⌘K, et une palette que personne n'ouvre ne sert à rien. */}
           <button type="button" className="dash-search" onClick={() => setPaletteOpen(true)}>
@@ -272,22 +287,39 @@ export function DashShell({
             <span className="dash-search-text">Rechercher</span>
             <kbd className="dash-kbd">⌘K</kbd>
           </button>
-          {/* L'horloge est identique pour les quatre rôles : sur un format de
-              30 h, « combien de temps reste-t-il » conditionne autant la
-              décision d'un juré que celle d'une équipe. */}
-          <div className="dash-clock">
-            <span className="dash-clock-label">Reste</span>
-            <span className="dash-clock-value">{remainingLabel()}</span>
+
+          <div className="dash-topbar-actions">
+            {/* L'horloge est identique pour les quatre rôles : sur un format de
+                30 h, « combien de temps reste-t-il » conditionne autant la
+                décision d'un juré que celle d'une équipe. Le title porte le
+                contexte que les trois mots affichés ne peuvent pas tenir. */}
             <div
-              className="dash-clock-track"
-              role="progressbar"
-              aria-valuenow={EVENT_PROGRESS}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Événement écoulé à ${EVENT_PROGRESS} %, sur ${EVENT.totalHours} heures`}
+              className="dash-clock"
+              title={`${EVENT_PROGRESS} % des ${EVENT.totalHours} h écoulées`}
             >
-              <div className="dash-clock-fill" style={{ width: `${EVENT_PROGRESS}%` }} />
+              <span className="dash-clock-label">Reste</span>
+              <span className="dash-clock-value">{remainingLabel()}</span>
+              <div
+                className="dash-clock-track"
+                role="progressbar"
+                aria-valuenow={EVENT_PROGRESS}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Événement écoulé à ${EVENT_PROGRESS} %, sur ${EVENT.totalHours} heures`}
+              >
+                <div className="dash-clock-fill" style={{ width: `${EVENT_PROGRESS}%` }} />
+              </div>
             </div>
+
+            <span className="dash-topbar-sep" aria-hidden="true" />
+
+            <ThemeToggle className="dash-icon-btn" />
+            {/* Sortie explicite. Sous 1080px le rail masque l'identité et les
+                actions de compte : sans ce bouton, on ne peut plus quitter
+                l'espace depuis un téléphone. */}
+            <Link href="/" className="dash-icon-btn" aria-label="Quitter l'espace" title="Quitter l'espace">
+              <Logout size={16} />
+            </Link>
           </div>
         </header>
 

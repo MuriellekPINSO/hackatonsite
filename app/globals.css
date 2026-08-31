@@ -1292,7 +1292,8 @@
   .dash-rail-mark{height:22px;width:auto;display:block;}
   .dash-rail-event{
     font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
-    font-weight:700;color:var(--ink-soft);line-height:1.5;padding-left:10px;border-left:1px solid var(--line);
+    font-weight:700;color:var(--ink-soft);line-height:1;padding-left:10px;border-left:1px solid var(--line);
+    white-space:nowrap;
   }
 
   /* Identité de la personne connectée. Sur un événement où les quatre rôles se
@@ -1347,7 +1348,28 @@
     padding:12px 28px;background:var(--glass-3);backdrop-filter:blur(12px);
     border-bottom:1px solid var(--line);
   }
-  .dash-topbar-title{font-size:15px;font-weight:800;letter-spacing:-.01em;}
+  /* Fil d'Ariane. Le premier segment nomme l'espace, le second suit la section
+     à l'écran. C'est ce qui remplace l'ancien titre, qui recopiait le <h1>
+     situé quarante pixels plus bas. */
+  .dash-crumb{display:flex;align-items:center;gap:8px;min-width:0;flex-shrink:0;}
+  .dash-crumb-root{font-size:14px;font-weight:700;color:var(--ink-soft);white-space:nowrap;}
+  .dash-crumb-sep{font-family:var(--font-mono);font-size:13px;color:var(--line-strong);}
+  .dash-crumb-current{
+    font-size:14px;font-weight:800;letter-spacing:-.01em;color:var(--ink);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* Le groupe de droite : horloge, thème, sortie. Séparé de la recherche par
+     un filet, pour qu'on lise trois zones et pas huit éléments en file. */
+  .dash-topbar-actions{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0;}
+  .dash-topbar-sep{width:1px;height:20px;background:var(--line);flex-shrink:0;}
+  .dash-icon-btn{
+    display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+    width:32px;height:32px;border-radius:var(--radius-sm);cursor:pointer;
+    border:1px solid transparent;background:none;color:var(--ink-soft);
+    transition:background .18s var(--ease),color .18s var(--ease),border-color .18s var(--ease);
+  }
+  .dash-icon-btn:hover{background:var(--cream-2);border-color:var(--line);color:var(--ink);}
   /* Horloge de l'événement. Sur un format de 30 h, « il reste 17 h 42 » est
      l'information qui conditionne toutes les décisions de la journée : elle
      est donc en haut de chaque écran, pour tous les rôles. */
@@ -1356,6 +1378,7 @@
      jour même, une commande invisible n'existe pas. */
   .dash-search{
     display:flex;align-items:center;gap:8px;padding:6px 10px 6px 12px;
+    flex:1;min-width:0;max-width:340px;margin-left:14px;
     border-radius:var(--radius-pill);border:1px solid var(--line);background:var(--cream-2);
     color:var(--ink-soft);font-size:13px;cursor:pointer;
     transition:border-color .18s var(--ease),color .18s var(--ease);
@@ -1367,12 +1390,20 @@
     padding:3px 6px;border-radius:6px;border:1px solid var(--line-strong);
     background:var(--white);color:var(--ink-soft);
   }
+  @media(max-width:860px){
+    /* Sous 860px on garde la section courante et on lâche le nom de l'espace :
+       le rail replié juste au-dessus l'indique déjà. */
+    .dash-crumb-root,.dash-crumb-sep{display:none;}
+    .dash-search{max-width:none;margin-left:10px;}
+  }
   @media(max-width:700px){
     .dash-search-text,.dash-kbd{display:none;}
-    .dash-search{padding:7px;}
+    .dash-search{padding:7px;flex:0 0 auto;}
+    .dash-clock-label{display:none;}
+    .dash-topbar-actions{gap:6px;}
   }
 
-  .dash-clock{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .dash-clock{display:flex;align-items:center;gap:9px;}
   .dash-clock-value{font-family:var(--font-mono);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
   .dash-clock-label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);}
   .dash-clock-track{width:120px;height:5px;border-radius:var(--radius-pill);background:var(--line);overflow:hidden;}

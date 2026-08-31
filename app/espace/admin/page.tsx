@@ -55,7 +55,7 @@ export default function AdminEspace() {
   const deployed = RANKED.filter((t) => t.status !== "inscrite").length;
 
   return (
-    <DashShell role="admin" who={ORG_ME} title="Pilotage de l'événement" sections={SECTIONS}>
+    <DashShell role="admin" who={ORG_ME} title="Organisation" sections={SECTIONS}>
       <div className="dash-page-head">
         <div>
           <h1 className="dash-page-title">Pilotage</h1>

@@ -119,7 +119,7 @@ export default function JuryEspace() {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <DashShell role="jury" who={JURY_ME} title="Notation" sections={sections}>
+    <DashShell role="jury" who={JURY_ME} title="Jury" sections={sections}>
       <div className="dash-page-head">
         <div>
           <h1 className="dash-page-title">Vos notations</h1>

@@ -85,7 +85,7 @@ export default function MentorEspace() {
   }
 
   return (
-    <DashShell role="mentor" who={MENTOR_ME} title="Accompagnement" sections={sections}>
+    <DashShell role="mentor" who={MENTOR_ME} title="Mentor" sections={sections}>
       <div className="dash-page-head">
         <div>
           <h1 className="dash-page-title">Accompagnement</h1>

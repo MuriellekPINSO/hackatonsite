@@ -30,37 +30,57 @@ import {
   teamById,
   waitLabel,
 } from "@/lib/espaces-mock";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DashShell, type DashSection } from "@/components/espaces/dash-shell";
 import { Avatar, Bar, Pill, SectionHead } from "@/components/espaces/dash-ui";
 
 const CRITERION_LABEL = Object.fromEntries(CRITERIA.map((c) => [c.key, c.label]));
 
+/** Membre vu depuis l'espace équipe.
+ *
+ *  `Member` (lib/competition.ts) ne porte QUE { name, role }, comme la table
+ *  `members` et comme le formulaire d'inscription public. Personne n'a donc
+ *  d'adresse aujourd'hui, à part le contact de l'équipe. Or la connexion se
+ *  fait par lien envoyé par mail : sans adresse, un membre ne peut pas ouvrir
+ *  son espace. On étend le type ici, et l'écran montre qui n'en a pas. */
+type TeamMember = Member & { email?: string };
+
 export default function EquipeEspace() {
   const team = teamById(MY_TEAM_ID)!;
   const myRequests = HELP_REQUESTS.filter((r) => r.teamId === MY_TEAM_ID);
   const [askOpen, setAskOpen] = useState(false);
-  const [members, setMembers] = useState<Member[]>(team.members);
   const [addMemberOpen, setAddMemberOpen] = useState(false);
+
+  // L'adresse n'est pas un champ de plus : c'est CE qui permet à la personne
+  // d'ouvrir son espace, puisque la connexion se fait par lien envoyé par mail.
+  // Un membre sans adresse est un membre qui ne peut pas entrer.
+  const [members, setMembers] = useState<TeamMember[]>(team.members);
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("");
+  const [newEmail, setNewEmail] = useState("");
 
-  // Le bouton vit dans l'en-tête, en haut de page, mais le formulaire qu'il
-  // révèle est dans la section « Aide » plus bas : sans ce scroll, ouvrir le
-  // formulaire ne change rien à l'écran visible et donne l'impression que le
-  // bouton ne fait rien.
-  function openAsk() {
-    setAskOpen(true);
-    document.getElementById("aide")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(newEmail.trim());
+  const canAddMember = newName.trim().length > 1 && emailLooksValid;
 
   function addMember() {
+    if (!canAddMember) return;
     const name = newName.trim();
-    if (!name) return;
-    setMembers((prev) => [...prev, { name, role: newRole.trim() || "Membre" }]);
+    const email = newEmail.trim().toLowerCase();
+    setMembers((prev) => [...prev, { name, role: newRole.trim() || "Membre", email }]);
     setNewName("");
     setNewRole("");
+    setNewEmail("");
     setAddMemberOpen(false);
-    toast.success("Membre ajouté", { description: `${name} fait maintenant partie de l'équipe.` });
+    toast.success("Membre ajouté", {
+      description: `Un lien de connexion part vers ${email}.`,
+    });
   }
 
   const done = MY_DELIVERABLES.filter((d) => d.done).length;
@@ -89,7 +109,7 @@ export default function EquipeEspace() {
             {team.tagline} · {team.city}
           </p>
         </div>
-        <button type="button" className="dash-btn is-accent" onClick={openAsk}>
+        <button type="button" className="dash-btn is-accent" onClick={() => setAskOpen(true)}>
           <Lifebuoy size={15} />
           Demander de l&apos;aide
         </button>
@@ -225,60 +245,6 @@ export default function EquipeEspace() {
           sub="Un mentor prend la demande depuis son espace. Les demandes bloquantes passent devant les questions."
         />
 
-        {askOpen && (
-          <div className="dash-card" style={{ marginBottom: 16 }}>
-            <div className="dash-grid dash-grid-2" style={{ marginBottom: 14 }}>
-              <div className="dash-field">
-                <label className="dash-label" htmlFor="ask-subject">
-                  Sujet
-                </label>
-                <input
-                  id="ask-subject"
-                  className="dash-input"
-                  placeholder="OOM au chargement du modèle"
-                />
-              </div>
-              <div className="dash-field">
-                <label className="dash-label" htmlFor="ask-severity">
-                  Gravité
-                </label>
-                <select id="ask-severity" className="dash-input">
-                  <option>Bloquant : rien ne tourne</option>
-                  <option>Gênant : on avance mais mal</option>
-                  <option>Question : on veut un avis</option>
-                </select>
-              </div>
-            </div>
-            <div className="dash-field">
-              <label className="dash-label" htmlFor="ask-detail">
-                Ce que vous avez déjà tenté
-              </label>
-              <textarea
-                id="ask-detail"
-                className="dash-textarea"
-                placeholder="Message d'erreur exact, commande lancée, ce que vous avez essayé avant d'appeler."
-              />
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 }}>
-              <button type="button" className="dash-btn is-ghost is-sm" onClick={() => setAskOpen(false)}>
-                Annuler
-              </button>
-              <button
-                type="button"
-                className="dash-btn is-primary is-sm"
-                onClick={() => {
-                  setAskOpen(false);
-                  toast.success("Demande envoyée", {
-                    description: "Un mentor la prend en charge depuis son espace.",
-                  });
-                }}
-              >
-                Envoyer la demande
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="dash-card is-flush">
           {myRequests.length === 0 ? (
             <p className="dash-empty">Aucune demande envoyée.</p>
@@ -323,10 +289,18 @@ export default function EquipeEspace() {
         <SectionHead
           num="04"
           title="Membres"
-          sub={members.length >= 5 ? "Équipe au complet (5 personnes max)." : undefined}
+          sub={
+            members.length >= 5
+              ? "Équipe au complet (5 personnes max)."
+              : "Chaque membre a besoin de son adresse : c'est là qu'arrive son lien de connexion."
+          }
           aside={
             members.length < 5 ? (
-              <button type="button" className="dash-btn is-sm" onClick={() => setAddMemberOpen((v) => !v)}>
+              <button
+                type="button"
+                className="dash-btn is-primary is-sm"
+                onClick={() => setAddMemberOpen(true)}
+              >
                 <People size={15} />
                 Ajouter un membre
               </button>
@@ -334,56 +308,32 @@ export default function EquipeEspace() {
           }
         />
 
-        {addMemberOpen && (
-          <div className="dash-card" style={{ marginBottom: 16 }}>
-            <div className="dash-grid dash-grid-2" style={{ marginBottom: 14 }}>
-              <div className="dash-field">
-                <label className="dash-label" htmlFor="member-name">
-                  Nom
-                </label>
-                <input
-                  id="member-name"
-                  className="dash-input"
-                  placeholder="Prénom Nom"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                />
-              </div>
-              <div className="dash-field">
-                <label className="dash-label" htmlFor="member-role">
-                  Rôle
-                </label>
-                <input
-                  id="member-role"
-                  className="dash-input"
-                  placeholder="Backend / API, Frontend, Data…"
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value)}
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button type="button" className="dash-btn is-ghost is-sm" onClick={() => setAddMemberOpen(false)}>
-                Annuler
-              </button>
-              <button type="button" className="dash-btn is-primary is-sm" onClick={addMember} disabled={!newName.trim()}>
-                Ajouter
-              </button>
-            </div>
-          </div>
-        )}
-
         <div className="dash-grid dash-grid-4">
           {members.map((m) => (
             <div className="dash-card" key={m.name}>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <Avatar label={initials(m.name)} solid />
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3 }}>{m.name}</div>
                   <div className="dash-muted" style={{ fontSize: 12.5, marginTop: 2 }}>
                     {m.role}
                   </div>
                 </div>
+              </div>
+              {/* Qui peut entrer et qui ne peut pas, visible sur la carte. Les
+                  membres venus de l'inscription n'ont pas d'adresse : le
+                  formulaire public ne demandait qu'un nom et un rôle. */}
+              <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                {m.email ? (
+                  <>
+                    <span className="dash-check-link">{m.email}</span>
+                    <Pill tone="green" dot>
+                      Peut se connecter
+                    </Pill>
+                  </>
+                ) : (
+                  <Pill tone="amber">Adresse manquante</Pill>
+                )}
               </div>
             </div>
           ))}
@@ -412,6 +362,167 @@ export default function EquipeEspace() {
           </div>
         </div>
       </section>
+
+      {/* ============================ DIALOGUES ============================ */}
+
+      {/* Demander de l'aide. En dialogue et non en panneau déplié dans la
+          section « Aide » : le bouton est en haut de page, la section est en
+          bas, et dérouler un formulaire hors de l'écran donnait l'impression
+          que le bouton ne faisait rien. Il fallait un scroll automatique pour
+          rattraper le coup, ce qui est le signe qu'on n'était pas au bon
+          endroit. Une demande d'aide est de toute façon une interruption : elle
+          mérite qu'on arrête la page. */}
+      <Dialog open={askOpen} onOpenChange={setAskOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Demander de l&apos;aide</DialogTitle>
+            <DialogDescription>
+              Les demandes bloquantes passent devant les questions. Un mentor la prend en charge
+              depuis son espace.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="dash-field">
+              <label className="dash-label" htmlFor="ask-subject">
+                Sujet
+              </label>
+              <input
+                id="ask-subject"
+                className="dash-input"
+                placeholder="OOM au chargement du modèle"
+              />
+            </div>
+            <div className="dash-field">
+              <label className="dash-label" htmlFor="ask-severity">
+                Gravité
+              </label>
+              <select id="ask-severity" className="dash-input">
+                <option>Bloquant : rien ne tourne</option>
+                <option>Gênant : on avance mais mal</option>
+                <option>Question : on veut un avis</option>
+              </select>
+            </div>
+            <div className="dash-field">
+              <label className="dash-label" htmlFor="ask-detail">
+                Ce que vous avez déjà tenté
+              </label>
+              <textarea
+                id="ask-detail"
+                className="dash-textarea"
+                placeholder="Message d'erreur exact, commande lancée, ce que vous avez essayé avant d'appeler."
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <button
+              type="button"
+              className="dash-btn is-ghost is-sm"
+              onClick={() => setAskOpen(false)}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              className="dash-btn is-primary is-sm"
+              onClick={() => {
+                setAskOpen(false);
+                toast.success("Demande envoyée", {
+                  description: "Un mentor la prend en charge depuis son espace.",
+                });
+              }}
+            >
+              Envoyer la demande
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ajouter un membre. L'adresse est obligatoire et le bouton reste
+          désactivé tant qu'elle n'est pas plausible : sans elle la personne
+          apparaîtrait dans l'équipe sans jamais pouvoir ouvrir son espace, et
+          c'est le genre d'oubli qu'on ne découvre qu'à 2 h du matin. */}
+      <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter un membre</DialogTitle>
+            <DialogDescription>
+              {members.length} sur 5. La personne recevra un lien de connexion à l&apos;adresse
+              indiquée.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="dash-field">
+              <label className="dash-label" htmlFor="member-name">
+                Nom complet
+              </label>
+              <input
+                id="member-name"
+                className="dash-input"
+                placeholder="Prénom Nom"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+              />
+            </div>
+            <div className="dash-field">
+              <label className="dash-label" htmlFor="member-email">
+                Adresse e-mail
+              </label>
+              <input
+                id="member-email"
+                type="email"
+                autoComplete="off"
+                className="dash-input"
+                placeholder="prenom@exemple.bj"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                aria-describedby="member-email-help"
+              />
+              <p
+                id="member-email-help"
+                className="dash-muted"
+                style={{ fontSize: 12, lineHeight: 1.5 }}
+              >
+                C&apos;est cette adresse qui ouvre l&apos;accès à l&apos;espace. Sans elle, la
+                personne figure dans l&apos;équipe mais ne peut pas se connecter.
+              </p>
+            </div>
+            <div className="dash-field">
+              <label className="dash-label" htmlFor="member-role">
+                Rôle dans l&apos;équipe
+              </label>
+              <input
+                id="member-role"
+                className="dash-input"
+                placeholder="Backend / API, Frontend, Data…"
+                value={newRole}
+                onChange={(e) => setNewRole(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <button
+              type="button"
+              className="dash-btn is-ghost is-sm"
+              onClick={() => setAddMemberOpen(false)}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              className="dash-btn is-primary is-sm"
+              onClick={addMember}
+              disabled={!canAddMember}
+              title={!canAddMember ? "Un nom et une adresse valide sont requis" : undefined}
+            >
+              Ajouter et inviter
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashShell>
   );
 }

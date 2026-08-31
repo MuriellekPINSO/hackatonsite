@@ -17,13 +17,21 @@
     --secondary-foreground: 240 6.9% 11.4%;
     --muted: 260 12% 95.1%;
     --muted-foreground: 240 6% 29.2%;
-    --accent: 14.6 64.4% 46.3%;
-    --accent-foreground: 0 0% 100%;
+    /* Surface de sélection des composants shadcn (ligne active de la palette
+       ⌘K, entrée de menu survolée). La valeur d'origine était un terracotta
+       saturé avec du texte blanc : hérité d'un générateur de thème, absent de
+       la palette Tamebi, et si fort qu'une simple ligne survolée criait plus
+       fort que le contenu. On reprend la teinte de sélection déjà employée
+       partout ailleurs dans ce fichier, rgba(68,173,171,.12), en opaque. */
+    --accent: 184 30% 91%;
+    --accent-foreground: 240 6.9% 11.4%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --border: 257.1 14.3% 90.4%;
     --input: 253.3 8.6% 79.4%;
-    --ring: 14.6 64.4% 46.3%;
+    /* Anneau de focus, aligné sur le outline teal de la règle :focus-visible
+       plus bas : deux couleurs de focus différentes sur la même page, non. */
+    --ring: 179 44% 47%;
   }
 
   :root{
@@ -44,6 +52,16 @@
        brut manque de contraste sur une surface claire, et --teal-deep est
        illisible sur une surface sombre. */
     --teal-text:#2f6f6d;
+    /* Même raison que --teal-text juste au-dessus : ces trois teintes ne
+       servent QU'EN TEXTE (pilules d'état, compteurs, deltas). Une valeur qui
+       passe sur du cream est illisible sur du charbon, et inversement : elles
+       doivent donc basculer avec le thème plutôt que d'être écrites en dur. */
+    --ok-text:#2f7d4c;
+    --warn-text:#8a6114;
+    --bad-text:#a8412b;
+    /* Version pleine du vert, pour les pastilles où c'est le FOND qui est vert
+       et le texte blanc : la teinte de texte ci-dessus serait trop claire. */
+    --ok-solid:#268049;
 
     /* Pile monospace pour tout le vocabulaire « technique » de la page :
        repères de fiche, en-têtes de colonne, valeurs de spec. Product Sans n'a
@@ -108,6 +126,10 @@
     --line-strong:#3d3d45;
     --white:#1a1a1e;
     --teal-text:#8fd4d2;
+    --ok-text:#6fd394;
+    --warn-text:#e0b45f;
+    --bad-text:#e8917a;
+    --ok-solid:#2f9e5a;
     --blueprint-line:rgba(255,255,255,.05);
     --blueprint-dot:rgba(255,255,255,.09);
     --ascii-ink:#8f8f9b;
@@ -136,6 +158,9 @@
     --primary-foreground: 240 6% 8%;
     --secondary: 240 5% 16%;
     --secondary-foreground: 240 14.3% 97.3%;
+    --accent: 184 20% 21%;
+    --accent-foreground: 240 14.3% 97.3%;
+    --ring: 179 44% 55%;
     --muted: 240 5% 16%;
     --muted-foreground: 240 6% 68%;
     --border: 240 5% 20%;
@@ -1238,4 +1263,377 @@
       transition-duration:0.01ms !important;
       scroll-behavior:auto !important;
     }
+  }
+
+  /* ============================================================
+     ESPACES DE TRAVAIL — organisation, jury, mentor, équipe
+     ============================================================
+     Quatre espaces privés greffés sur la landing publique. Tout est bâti sur
+     les mêmes tokens que le reste du site (--cream / --ink / --teal / --line),
+     donc le thème sombre suit sans une ligne de plus, et le vocabulaire
+     visuel du scoreboard (label mono, pilule d'état, chiffre tabulaire) est
+     repris tel quel : un juré qui arrive de la page publique reconnaît ses
+     repères.
+
+     Le préfixe .dash- isole ce bloc du CSS de la landing : aucune règle
+     ci-dessous ne peut atteindre le hero, le globe ou le scoreboard. */
+
+  /* --- COQUILLE ------------------------------------------------ */
+  .dash-shell{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh;background:var(--cream);}
+  /* Le rail défile avec sa propre barre plutôt qu'avec la page : pendant les
+     30 h l'orga passe son temps à sauter d'une section à l'autre, la
+     navigation doit rester sous le curseur en permanence. */
+  .dash-rail{
+    position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    display:flex;flex-direction:column;gap:20px;padding:18px 14px;
+    background:var(--white);border-right:1px solid var(--line);
+  }
+  .dash-rail-brand{display:flex;align-items:center;gap:10px;padding:0 8px;}
+  .dash-rail-mark{height:22px;width:auto;display:block;}
+  .dash-rail-event{
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    font-weight:700;color:var(--ink-soft);line-height:1.5;padding-left:10px;border-left:1px solid var(--line);
+  }
+
+  /* Identité de la personne connectée. Sur un événement où les quatre rôles se
+     croisent dans la même salle, savoir « en tant que qui » on regarde l'écran
+     évite la moitié des malentendus. */
+  .dash-who{display:flex;align-items:center;gap:11px;padding:11px 10px;background:var(--cream-2);border:1px solid var(--line);border-radius:var(--radius-sm);}
+  .dash-who-avatar{
+    flex-shrink:0;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:800;letter-spacing:.02em;background:var(--green);color:var(--fixed-light);
+  }
+  .dash-who-name{font-size:13px;font-weight:700;line-height:1.3;}
+  .dash-who-role{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--teal-text);margin-top:2px;}
+
+  .dash-nav{display:flex;flex-direction:column;gap:2px;}
+  .dash-nav-title{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);padding:0 10px;margin-bottom:8px;}
+  .dash-nav-item{
+    display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:var(--radius-sm);
+    font-size:13.5px;font-weight:600;color:var(--ink-soft);cursor:pointer;
+    border:none;background:none;width:100%;text-align:left;
+    transition:background .18s var(--ease),color .18s var(--ease);
+  }
+  .dash-nav-item:hover{background:var(--hover-tint);color:var(--ink);}
+  /* L'état actif se lit au filet teal ET au fond : le teal seul ne suffit pas
+     pour qui distingue mal les couleurs. */
+  .dash-nav-item[data-active="true"]{background:var(--cream-2);color:var(--ink);box-shadow:inset 2px 0 0 var(--teal);}
+  .dash-nav-icon{flex-shrink:0;width:16px;height:16px;opacity:.75;}
+  .dash-nav-item[data-active="true"] .dash-nav-icon{opacity:1;color:var(--teal-text);}
+  .dash-nav-count{
+    margin-left:auto;font-family:var(--font-mono);font-size:10px;font-weight:700;
+    padding:1px 7px;border-radius:var(--radius-pill);background:var(--line);color:var(--ink-soft);
+  }
+  .dash-nav-count.is-hot{background:rgba(196,85,60,.14);color:var(--bad-text);}
+
+  /* Bascule de rôle. Présente uniquement tant que l'authentification n'est pas
+     branchée : elle permet de parcourir les quatre espaces d'un clic pour les
+     valider. À retirer le jour où le rôle vient de la session. */
+  .dash-switcher{margin-top:auto;padding-top:18px;border-top:1px dashed var(--line-strong);}
+  .dash-switcher-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);padding:0 10px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .dash-switcher-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+  .dash-switcher-btn{
+    padding:8px 6px;border-radius:var(--radius-sm);border:1px solid var(--line);background:var(--white);
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+    color:var(--ink-soft);cursor:pointer;transition:border-color .18s,color .18s,background .18s;
+  }
+  .dash-switcher-btn:hover{border-color:var(--line-strong);color:var(--ink);}
+  .dash-switcher-btn[data-active="true"]{background:var(--green);border-color:var(--green);color:var(--fixed-light);}
+
+  /* --- ZONE PRINCIPALE ----------------------------------------- */
+  .dash-main{min-width:0;display:flex;flex-direction:column;}
+  .dash-topbar{
+    position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+    padding:12px 28px;background:var(--glass-3);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .dash-topbar-title{font-size:15px;font-weight:800;letter-spacing:-.01em;}
+  /* Horloge de l'événement. Sur un format de 30 h, « il reste 17 h 42 » est
+     l'information qui conditionne toutes les décisions de la journée : elle
+     est donc en haut de chaque écran, pour tous les rôles. */
+  /* Déclencheur de la palette ⌘K. Affiché plutôt que caché derrière le seul
+     raccourci : sur un événement où la moitié des gens découvrent l'outil le
+     jour même, une commande invisible n'existe pas. */
+  .dash-search{
+    display:flex;align-items:center;gap:8px;padding:6px 10px 6px 12px;
+    border-radius:var(--radius-pill);border:1px solid var(--line);background:var(--cream-2);
+    color:var(--ink-soft);font-size:13px;cursor:pointer;
+    transition:border-color .18s var(--ease),color .18s var(--ease);
+  }
+  .dash-search:hover{border-color:var(--line-strong);color:var(--ink);}
+  .dash-search-text{font-weight:600;}
+  .dash-kbd{
+    font-family:var(--font-mono);font-size:10.5px;font-weight:700;line-height:1;
+    padding:3px 6px;border-radius:6px;border:1px solid var(--line-strong);
+    background:var(--white);color:var(--ink-soft);
+  }
+  @media(max-width:700px){
+    .dash-search-text,.dash-kbd{display:none;}
+    .dash-search{padding:7px;}
+  }
+
+  .dash-clock{display:flex;align-items:center;gap:10px;margin-left:auto;}
+  .dash-clock-value{font-family:var(--font-mono);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;}
+  .dash-clock-label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);}
+  .dash-clock-track{width:120px;height:5px;border-radius:var(--radius-pill);background:var(--line);overflow:hidden;}
+  .dash-clock-fill{height:100%;border-radius:inherit;background:var(--teal);}
+
+  .dash-body{padding:24px 28px 56px;display:flex;flex-direction:column;gap:36px;max-width:1560px;width:100%;}
+  /* scroll-margin : les ancres du rail amènent la section sous la topbar
+     collante, pas dessous. */
+  .dash-section{padding:0;scroll-margin-top:76px;}
+  .dash-section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:15px;}
+  .dash-section-num{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--line-strong);margin-bottom:5px;letter-spacing:.06em;}
+  .dash-section-title{font-size:20px;font-weight:800;letter-spacing:-.025em;line-height:1.15;}
+  .dash-section-sub{font-size:13.5px;color:var(--ink-soft);margin-top:5px;max-width:68ch;}
+
+  .dash-page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;}
+  .dash-page-title{font-size:clamp(24px,2.4vw,30px);font-weight:800;letter-spacing:-.03em;line-height:1.1;}
+  .dash-page-sub{font-size:14px;color:var(--ink-soft);margin-top:6px;max-width:70ch;}
+
+  /* --- BRIQUES ------------------------------------------------- */
+  .dash-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow-xs);}
+  .dash-card.is-flush{padding:0;overflow:hidden;}
+  .dash-card.is-dark{background:var(--green);border-color:var(--green);color:var(--fixed-light);}
+  .dash-card.is-dark .dash-stat-label,.dash-card.is-dark .dash-muted{color:rgba(247,247,249,.62);}
+
+  .dash-grid{display:grid;gap:13px;}
+  .dash-grid-4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
+  .dash-grid-3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));}
+  .dash-grid-2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));align-items:start;}
+  .dash-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:13px;align-items:start;}
+
+  .dash-stat-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);}
+  .dash-stat-value{font-size:28px;font-weight:800;letter-spacing:-.035em;line-height:1.05;font-variant-numeric:tabular-nums;margin-top:7px;}
+  .dash-stat-unit{font-size:14px;font-weight:600;color:var(--ink-soft);margin-left:3px;letter-spacing:0;}
+  .dash-stat-foot{font-size:12.5px;color:var(--ink-soft);margin-top:7px;display:flex;align-items:center;gap:6px;}
+  .dash-muted{color:var(--ink-soft);}
+  .dash-mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+
+  .dash-bar{height:6px;border-radius:var(--radius-pill);background:var(--line);overflow:hidden;}
+  .dash-bar-fill{height:100%;border-radius:inherit;background:var(--teal);transition:width .45s var(--ease);}
+  .dash-bar.on-dark{background:rgba(247,247,249,.16);}
+  .dash-bar.on-dark .dash-bar-fill{background:var(--accent-on-dark);}
+
+  /* Pilule d'état, reprise du scoreboard pour que « Soumis » se lise pareil
+     dans l'espace jury et sur la page publique. */
+  .dash-pill{
+    display:inline-flex;align-items:center;gap:5px;flex-shrink:0;font-family:var(--font-mono);
+    font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:3px 9px;border-radius:var(--radius-pill);
+    border:1px solid var(--line);background:var(--cream-2);color:var(--ink-soft);
+  }
+  .dash-pill.is-teal{border-color:rgba(68,173,171,.3);background:rgba(68,173,171,.12);color:var(--teal-text);}
+  .dash-pill.is-green{border-color:rgba(62,201,107,.32);background:rgba(62,201,107,.13);color:var(--ok-text);}
+  .dash-pill.is-amber{border-color:rgba(197,138,42,.3);background:rgba(223,169,60,.14);color:var(--warn-text);}
+  .dash-pill.is-red{border-color:rgba(196,85,60,.3);background:rgba(196,85,60,.12);color:var(--bad-text);}
+  .dash-pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+  .dash-chips{display:flex;gap:7px;flex-wrap:wrap;}
+  .dash-chip{
+    padding:7px 14px;border-radius:var(--radius-pill);border:1px solid var(--line);background:var(--white);
+    font-size:12.5px;font-weight:700;color:var(--ink-soft);cursor:pointer;
+    transition:border-color .18s,color .18s,background .18s;
+  }
+  .dash-chip:hover{border-color:var(--line-strong);color:var(--ink);}
+  .dash-chip[data-active="true"]{background:var(--ink);border-color:var(--ink);color:var(--cream);}
+  .dash-chip-count{font-family:var(--font-mono);font-size:10.5px;opacity:.7;margin-left:5px;}
+
+  .dash-avatar{
+    flex-shrink:0;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    font-size:11.5px;font-weight:800;background:var(--cream-2);border:1px solid var(--line);color:var(--ink-soft);
+  }
+  .dash-avatar.is-solid{background:var(--green);border-color:var(--green);color:var(--fixed-light);}
+  .dash-avatar.is-sm{width:28px;height:28px;border-radius:9px;font-size:10px;}
+  .dash-avatar-stack{display:flex;}
+  .dash-avatar-stack .dash-avatar{margin-left:-8px;box-shadow:0 0 0 2px var(--white);}
+  .dash-avatar-stack .dash-avatar:first-child{margin-left:0;}
+
+  .dash-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 17px;
+    border-radius:var(--radius-pill);font-weight:700;font-size:13px;cursor:pointer;
+    border:1px solid var(--line-strong);background:var(--white);color:var(--ink);
+    transition:border-color .18s var(--ease),background .18s var(--ease),box-shadow .18s var(--ease),opacity .18s;
+  }
+  .dash-btn:hover:not(:disabled){border-color:var(--ink);box-shadow:var(--shadow-sm);}
+  .dash-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .dash-btn.is-primary{background:var(--green);border-color:var(--green);color:var(--fixed-light);}
+  .dash-btn.is-primary:hover:not(:disabled){box-shadow:var(--shadow-md);}
+  .dash-btn.is-accent{background:var(--teal);border-color:var(--teal);color:#fff;}
+  .dash-btn.is-ghost{background:none;border-color:transparent;color:var(--ink-soft);}
+  .dash-btn.is-ghost:hover:not(:disabled){background:var(--hover-tint);color:var(--ink);box-shadow:none;}
+  .dash-btn.is-sm{padding:6px 13px;font-size:12px;}
+  .dash-btn.on-dark{background:rgba(247,247,249,.1);border-color:rgba(247,247,249,.22);color:var(--fixed-light);}
+  .dash-btn.on-dark:hover:not(:disabled){background:rgba(247,247,249,.18);border-color:rgba(247,247,249,.4);}
+
+  /* --- INTERRUPTEURS ------------------------------------------- */
+  /* Les bascules qui pilotent l'événement en direct. Volontairement larges et
+     décrites en toutes lettres : elles se manipulent sous pression, souvent
+     par quelqu'un qui n'a pas écrit le code. */
+  .dash-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:14px 18px;border-bottom:1px solid var(--line);}
+  .dash-toggle-row:last-child{border-bottom:none;}
+  .dash-toggle-title{font-size:14.5px;font-weight:700;display:flex;align-items:center;gap:9px;}
+  .dash-toggle-desc{font-size:12.5px;color:var(--ink-soft);margin-top:5px;max-width:56ch;line-height:1.5;}
+  .dash-switch{
+    flex-shrink:0;position:relative;width:46px;height:26px;border-radius:var(--radius-pill);cursor:pointer;
+    border:1px solid var(--line-strong);background:var(--cream-2);transition:background .22s var(--ease),border-color .22s var(--ease);
+  }
+  .dash-switch::after{
+    content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+    background:var(--white);box-shadow:var(--shadow-sm);transition:transform .22s var(--ease);
+  }
+  .dash-switch[aria-checked="true"]{background:var(--teal);border-color:var(--teal);}
+  .dash-switch[aria-checked="true"]::after{transform:translateX(20px);}
+
+  /* --- LISTES / TABLES ------------------------------------------ */
+  .dash-table-wrap{overflow-x:auto;}
+  .dash-table{width:100%;border-collapse:separate;border-spacing:0;min-width:720px;}
+  .dash-table thead th{
+    position:sticky;top:0;z-index:2;padding:12px 18px;text-align:left;white-space:nowrap;
+    background:var(--cream-2);box-shadow:inset 0 -1px 0 var(--line);
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);
+  }
+  .dash-table tbody td{padding:13px 18px;border-bottom:1px solid var(--line);font-size:13.5px;vertical-align:middle;}
+  .dash-table tbody tr:last-child td{border-bottom:none;}
+  .dash-table tbody tr:hover{background:var(--hover-tint);}
+  .dash-num{font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.02em;}
+
+  /* Ligne cliquable des files (notation, demandes d'aide). Le filet teal à
+     gauche marque la sélection courante. */
+  .dash-row{
+    display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 16px;
+    border:none;border-bottom:1px solid var(--line);background:none;cursor:pointer;
+    transition:background .18s var(--ease),box-shadow .18s var(--ease);
+  }
+  .dash-row:last-child{border-bottom:none;}
+  .dash-row:hover{background:var(--hover-tint);}
+  .dash-row[data-selected="true"]{background:rgba(68,173,171,.09);box-shadow:inset 3px 0 0 var(--teal);}
+  .dash-row-main{flex:1;min-width:0;}
+  .dash-row-title{font-size:14px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;}
+  .dash-row-sub{font-size:12.5px;color:var(--ink-soft);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .dash-row-side{flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+
+  /* --- CURSEURS DE NOTATION ------------------------------------ */
+  .dash-criterion{padding:15px 0;border-bottom:1px solid var(--line);}
+  .dash-criterion:last-of-type{border-bottom:none;}
+  .dash-criterion-head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:12px;}
+  .dash-criterion-label{font-size:14px;font-weight:700;display:flex;align-items:baseline;gap:9px;}
+  .dash-criterion-weight{font-family:var(--font-mono);font-size:10.5px;font-weight:700;color:var(--ink-soft);letter-spacing:.06em;}
+  .dash-criterion-score{font-size:24px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1;}
+  .dash-criterion-max{font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:2px;}
+  .dash-criterion-help{font-size:12.5px;color:var(--ink-soft);margin-top:11px;line-height:1.5;}
+
+  .dash-range{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:var(--radius-pill);background:var(--line);outline:none;cursor:grab;}
+  .dash-range:active{cursor:grabbing;}
+  .dash-range::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;cursor:inherit;
+    background:var(--white);border:2px solid var(--teal);box-shadow:var(--shadow-sm);
+    transition:transform .15s var(--ease),box-shadow .15s var(--ease);
+  }
+  .dash-range::-webkit-slider-thumb:hover{transform:scale(1.12);box-shadow:0 0 0 6px rgba(68,173,171,.15);}
+  .dash-range::-moz-range-thumb{
+    width:22px;height:22px;border-radius:50%;cursor:inherit;
+    background:var(--white);border:2px solid var(--teal);box-shadow:var(--shadow-sm);
+  }
+  .dash-range:disabled{opacity:.45;cursor:not-allowed;}
+  .dash-range:disabled::-webkit-slider-thumb{border-color:var(--line-strong);}
+
+  /* Total pondéré. Gros, tabulaire, recalculé sous les doigts : c'est le seul
+     chiffre que le juré regarde vraiment avant de soumettre. */
+  .dash-total{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;flex-wrap:wrap;padding:20px;border-radius:var(--radius-sm);background:var(--cream-2);border:1px solid var(--line);}
+  .dash-total-value{font-size:46px;font-weight:800;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;margin-top:8px;}
+  .dash-total-max{font-size:18px;font-weight:600;color:var(--ink-soft);margin-left:4px;letter-spacing:0;}
+
+  .dash-field{display:flex;flex-direction:column;gap:8px;}
+  .dash-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:700;color:var(--ink-soft);}
+  .dash-input,.dash-textarea{
+    width:100%;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--line);
+    background:var(--white);color:var(--ink);font-size:13.5px;outline:none;
+    transition:border-color .18s,box-shadow .18s;
+  }
+  .dash-textarea{resize:vertical;min-height:88px;line-height:1.55;}
+  .dash-input:focus,.dash-textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(68,173,171,.15);}
+  .dash-input::placeholder,.dash-textarea::placeholder{color:var(--line-strong);}
+
+  /* --- CHECKLIST DE LIVRABLES ---------------------------------- */
+  /* Sur un sujet commun, ce qui départage les équipes n'est pas « quel projet »
+     mais « qu'est-ce qui tourne vraiment ». La checklist est donc la pièce
+     centrale de l'espace équipe, pas un encart de bas de page. */
+  .dash-check{display:flex;align-items:flex-start;gap:14px;padding:13px 0;border-bottom:1px solid var(--line);}
+  .dash-check:last-child{border-bottom:none;}
+  .dash-check-mark{
+    flex-shrink:0;width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line-strong);background:var(--white);color:var(--line-strong);font-size:12px;font-weight:800;
+  }
+  .dash-check[data-done="true"] .dash-check-mark{background:var(--ok-solid);border-color:var(--ok-solid);color:#fff;}
+  .dash-check-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .dash-check-desc{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5;}
+  .dash-check-link{font-family:var(--font-mono);font-size:11.5px;color:var(--teal-text);text-decoration:underline;text-underline-offset:3px;word-break:break-all;}
+
+  /* --- JOURNAL / FIL ------------------------------------------- */
+  .dash-feed{display:flex;flex-direction:column;}
+  .dash-feed-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);}
+  .dash-feed-item:last-child{border-bottom:none;}
+  .dash-feed-time{flex-shrink:0;width:52px;font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);font-variant-numeric:tabular-nums;padding-top:2px;}
+  .dash-feed-text{font-size:13.5px;line-height:1.5;}
+  .dash-feed-text b{font-weight:700;}
+
+  .dash-empty{padding:38px 20px;text-align:center;color:var(--ink-soft);font-size:13.5px;}
+  .dash-note{display:flex;gap:11px;padding:14px 16px;border-radius:var(--radius-sm);background:rgba(68,173,171,.09);border:1px solid rgba(68,173,171,.22);font-size:13px;line-height:1.55;color:var(--ink);}
+  .dash-note.is-amber{background:rgba(223,169,60,.12);border-color:rgba(197,138,42,.25);}
+
+  /* --- RESPONSIVE ---------------------------------------------- */
+  /* Sous 1080px le rail passe en barre horizontale défilante : pendant
+     l'événement une bonne partie des consultations se fait au téléphone,
+     debout, et une navigation en tiroir coûterait un geste de plus à chaque
+     changement de section. */
+  @media(max-width:1080px){
+    .dash-shell{grid-template-columns:1fr;}
+    .dash-rail{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;overflow-x:auto;padding:12px 16px;border-right:none;border-bottom:1px solid var(--line);}
+    .dash-rail-brand,.dash-who,.dash-nav-title{display:none;}
+    .dash-nav{flex-direction:row;gap:4px;}
+    .dash-nav-item{white-space:nowrap;padding:8px 13px;}
+    .dash-nav-item[data-active="true"]{box-shadow:inset 0 -2px 0 var(--teal);}
+    .dash-switcher{margin-top:0;margin-left:auto;padding-top:0;border-top:none;border-left:1px dashed var(--line-strong);padding-left:14px;}
+    .dash-switcher-label{display:none;}
+    .dash-switcher-grid{grid-template-columns:repeat(4,auto);}
+    .dash-split{grid-template-columns:1fr;}
+    .dash-body{padding:18px 16px 40px;gap:28px;}
+    .dash-topbar{padding:10px 16px;}
+  }
+  @media(max-width:560px){
+    .dash-clock-track{display:none;}
+    .dash-total-value{font-size:38px;}
+  }
+
+  /* --- PORTE D'ENTRÉE DES ESPACES ------------------------------ */
+  /* Écran partagé par les quatre rôles : on ne choisit pas son espace, on
+     s'identifie et l'espace se déduit du rôle. Un panneau toujours sombre à
+     gauche (même parti pris que le hero et le footer de la landing), le
+     formulaire à droite sur le cream habituel. */
+  .dash-auth{min-height:100vh;display:grid;grid-template-columns:1.05fr 1fr;background:var(--cream);}
+  .dash-auth-aside{
+    background:var(--green);color:var(--fixed-light);
+    padding:clamp(32px,4vw,56px);display:flex;flex-direction:column;justify-content:space-between;gap:40px;
+  }
+  .dash-auth-mark{height:26px;width:auto;display:block;}
+  .dash-auth-claim{font-size:clamp(26px,2.9vw,38px);font-weight:800;letter-spacing:-.035em;line-height:1.12;max-width:15ch;}
+  .dash-auth-brief{font-size:15px;color:rgba(247,247,249,.66);margin-top:16px;max-width:44ch;line-height:1.6;}
+  .dash-auth-facts{display:grid;grid-template-columns:repeat(2,1fr);gap:22px 18px;}
+  .dash-auth-fact-label{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;color:rgba(247,247,249,.5);}
+  .dash-auth-fact-value{font-size:19px;font-weight:800;letter-spacing:-.025em;margin-top:6px;font-variant-numeric:tabular-nums;}
+
+  .dash-auth-panel{display:flex;align-items:center;justify-content:center;padding:clamp(32px,4vw,56px);}
+  .dash-auth-form{width:100%;max-width:390px;}
+  .dash-auth-title{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.15;}
+  .dash-auth-sub{font-size:14px;color:var(--ink-soft);margin-top:10px;line-height:1.6;}
+  .dash-auth-roles{display:flex;gap:6px;flex-wrap:wrap;margin-top:26px;padding-top:22px;border-top:1px solid var(--line);}
+
+  @media(max-width:860px){
+    .dash-auth{grid-template-columns:1fr;}
+    /* Le panneau sombre passe en bandeau court au-dessus du formulaire : sur
+       mobile, ce qu'on veut voir en premier c'est le champ, pas le manifeste. */
+    .dash-auth-aside{padding:22px 20px;flex-direction:row;align-items:center;justify-content:space-between;gap:18px;}
+    .dash-auth-claim,.dash-auth-brief,.dash-auth-facts{display:none;}
+    .dash-auth-panel{padding:36px 20px;}
   }

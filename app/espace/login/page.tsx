@@ -103,7 +103,12 @@ export default function EspaceLogin() {
             <span
               className="dash-avatar is-solid"
               aria-hidden="true"
-              style={{ marginBottom: 20, background: "var(--ok-solid)", borderColor: "var(--ok-solid)" }}
+              style={{
+                marginBottom: 20,
+                background: "var(--ok-solid)",
+                borderColor: "var(--ok-solid)",
+                color: "var(--ok-solid-fg)",
+              }}
             >
               <TickCircle size={17} />
             </span>

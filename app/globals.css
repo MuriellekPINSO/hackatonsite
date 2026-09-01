@@ -59,9 +59,13 @@
     --ok-text:#2f7d4c;
     --warn-text:#8a6114;
     --bad-text:#a8412b;
-    /* Version pleine du vert, pour les pastilles où c'est le FOND qui est vert
-       et le texte blanc : la teinte de texte ci-dessus serait trop claire. */
-    --ok-solid:#268049;
+    /* Aplat « c'est fait » : coche d'un livrable livré, accusé d'envoi. C'est
+       du teal et non du vert, parce que c'est la couleur d'accent de la marque
+       et que ces pastilles sont assez grandes pour peser dans la page. Le vert
+       reste réservé au TEXTE d'état (--ok-text), où le scoreboard l'emploie
+       déjà pour « Qualifiée » et pour les gains de rang. */
+    --ok-solid:#2f6f6d;
+    --ok-solid-fg:#ffffff;
 
     /* Pile monospace pour tout le vocabulaire « technique » de la page :
        repères de fiche, en-têtes de colonne, valeurs de spec. Product Sans n'a
@@ -129,7 +133,10 @@
     --ok-text:#6fd394;
     --warn-text:#e0b45f;
     --bad-text:#e8917a;
-    --ok-solid:#2f9e5a;
+    /* Sur fond charbon, le teal profond disparaîtrait : on prend le teal vif et
+       on inverse le glyphe en encre sombre, qui y contraste mieux que du blanc. */
+    --ok-solid:#44adab;
+    --ok-solid-fg:#1b1b1f;
     --blueprint-line:rgba(255,255,255,.05);
     --blueprint-dot:rgba(255,255,255,.09);
     --ascii-ink:#8f8f9b;
@@ -1611,7 +1618,7 @@
     flex-shrink:0;width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center;
     border:1px solid var(--line-strong);background:var(--white);color:var(--line-strong);font-size:12px;font-weight:800;
   }
-  .dash-check[data-done="true"] .dash-check-mark{background:var(--ok-solid);border-color:var(--ok-solid);color:#fff;}
+  .dash-check[data-done="true"] .dash-check-mark{background:var(--ok-solid);border-color:var(--ok-solid);color:var(--ok-solid-fg);}
   .dash-check-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
   .dash-check-desc{font-size:12.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5;}
   .dash-check-link{font-family:var(--font-mono);font-size:11.5px;color:var(--teal-text);text-decoration:underline;text-underline-offset:3px;word-break:break-all;}
